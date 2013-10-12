@@ -7,14 +7,10 @@ import org.json.JSONObject;
 import mm19.objects.Ship;
 import mm19.objects.Ship.ShipType;
 import mm19.objects.HitReport;
-import mm19.objects.Ship;
-import mm19.objects.Ship.ShipType;
 import mm19.objects.ShipAction.Action;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,8 +19,9 @@ import javax.swing.JOptionPane;
 
 import mm19.objects.ActionResult;
 
+import javax.swing.JPanel;
+
 import mm19.objects.ActionResult;
-import mm19.objects.Ship;
 import mm19.objects.ShipAction;
 import mm19.objects.ShotResult;
 import mm19.response.ServerResponse;
@@ -42,6 +39,10 @@ public class ForeverClient extends TestClient {
 	private int fireY = 0;
 	private int initialFireX = 0;
 	private int initialFireY = 0;
+	
+	private int resources = 0;
+	
+	private int usedResources = 0;
 	
 	// all current ships
 	private Ship[] ships;
@@ -75,10 +76,12 @@ public class ForeverClient extends TestClient {
 	@Override
 	public void processResponse(ServerResponse sr) {
 		lastResponse = sr;
+		resources = sr.resources;
 	}
 
 	@Override
 	public JSONObject prepareTurn(ServerResponse sr) {
+		usedResources = 0;
 		JSONObject turnObj = new JSONObject();
 		token = sr.playerToken;
 		ships = sr.ships;
@@ -132,6 +135,31 @@ public class ForeverClient extends TestClient {
 		turnObj.put("shipActions", actions);
 		return turnObj;
 	}
+	
+	/**
+	 * Returns resources we can spend.
+	 */
+	private int availableResources() {
+		return (resources - usedResources);
+	}
+	
+	/**
+	 * Returns whether we can spend the given amount of resources.
+	 * 
+	 * @param amount The amount to check for.
+	 */
+	private boolean canSpend(int amount) {
+		return (availableResources() >= amount);
+	}
+	
+	/**
+	 * Marks the amount of resources as spent.
+	 * 
+	 * @param amount The amount of resources to spend.
+	 */
+	private void spend(int amount) {
+		usedResources += amount;
+	}
 
 	@Override
 	public void handleInterrupt(ServerResponse sr) {
@@ -148,27 +176,25 @@ public class ForeverClient extends TestClient {
 	private void addDiagonalShots(List<ShipAction> plannedShots, List<Ship> fireableShips) {
 		while (initialFireX < 100 && initialFireY < 100) {
 			while (fireX < 100 && fireY < 100) {
-				
-				if (fireableShips.isEmpty()) {
+				if (fireableShips.isEmpty() || !canSpend(50)) {
 					return;
+				} else {
+					// fire:
+					Ship toFire = fireableShips.remove(0);
+					ShipAction sa = new ShipAction(toFire.ID);
+					sa.actionID = ShipAction.Action.Fire;
+					sa.actionX = fireX;
+					sa.actionY = fireY;
+					plannedShots.add(sa);
+					spend(50);
+					fireY++;
+					fireX++;
 				}
-				
-				// fire:
-				Ship toFire = fireableShips.remove(0);
-				ShipAction sa = new ShipAction(toFire.ID);
-				sa.actionID = ShipAction.Action.Fire;
-				sa.actionX = fireX;
-				sa.actionY = fireY;
-				plannedShots.add(sa);
-				
-				fireY++;
-				fireX++;
 			}
 			if (initialFireX < 100) {
 				initialFireX += 6;
 				fireX = initialFireX;
 				fireY = initialFireY;
-				//JOptionPane.showInputDialog("initialX has incremented to: " + initialFireX); //Testing
 				if (initialFireX > 100) {
 					fireY = 100;
 				}
