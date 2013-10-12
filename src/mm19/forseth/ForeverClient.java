@@ -45,8 +45,8 @@ public class ForeverClient extends TestClient {
 	 */
 	private static final int UNLOAD_BULLET_COUNT = 3;
 
-	public ForeverClient() {
-		super("ForsethAgain");
+	public ForeverClient(String name) {
+		super(name);
 	}
 
 	@Override
