@@ -38,9 +38,6 @@ public abstract class TestClient {
 
 		// Setup the initial data to send to the server
 		JSONObject obj = setup();
-		System.out.println("==================");
-		System.out.println("MSG: " + obj.toString());
-		System.out.println("==================");
 		responder.sendResponse(obj.toString());
 		requester.start();
 	}

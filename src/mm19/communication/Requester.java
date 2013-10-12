@@ -36,7 +36,6 @@ public class Requester extends Thread{
 				String s = in.readLine();
 				// Formulate a ServerResponse object from the server's response
 				ServerResponse sr = new ServerResponse(new JSONObject(s));
-				System.out.println(sr.toString());
 				// Call the appropriate method.
 				testClient.synchronizeResponse(sr);
 				

@@ -39,19 +39,28 @@ public class ForeverClient extends TestClient {
 	private String token;
 	public static final int MAP_WIDTH = 100;
 	public static final int MAP_HEIGHT = 100;
-	
+
+	public static final int MOVE_COST_PILOT = 100;
+	public static final int MOVE_COST_DESTROY = 200;
+	public static final int MOVE_COST_MAIN = 250;
+
+	public static final int FIRE_COST = 50;
+	public static final int BURST_COST = 250;
+
+
+
 	private Ship mainShip;
-	
+
 	private int fireX = 0;
 	private int fireY = 0;
 	private int initialFireX = 0;
 	private int initialFireY = 0;
 	private int loopsCompleted = 0;
-	
+
 	private int resources = 0;
-	
+
 	private int usedResources = 0;
-	
+
 	// all current ships
 	private Ship[] ships;
 	// TODO: optimize this later
@@ -89,45 +98,54 @@ public class ForeverClient extends TestClient {
 
 	@Override
 	public JSONObject prepareTurn(ServerResponse sr) {
+		turn++;
 		usedResources = 0;
 		JSONObject turnObj = new JSONObject();
 		token = sr.playerToken;
 		ships = sr.ships;
-		
+
 		List<Ship> fireableShips = new ArrayList<Ship>(Arrays.asList(ships));
 		Collection<JSONObject> actions = new ArrayList<JSONObject>();
 		ShipAction specialAction = null;
-		
+
 		// TODO: Check for pings on us as well
-		if (lastResponse != null) { // if not on first turn
-			List<HitReport> reports = Arrays.asList(lastResponse.hitReport);
-			List<PingReport> pings = Arrays.asList(lastResponse.pingReport);
-			specialAction = moveShips(reports, fireableShips, pings);
-			
+		if (lastResponse != null) { // spend check is in moveShip
+			List<HitReport> hits = Arrays.asList(sr.hitReport);
+			List<PingReport> pings = Arrays.asList(sr.pingReport);
+			List<Ship> potentialHits = detectShipHits(hits, pings, fireableShips);
+			specialAction = moveShip(potentialHits, fireableShips);
+			// cost of moving is subtracted within moveShips()
 		}
-		if (specialAction == null) {
+		if (specialAction == null && canSpend(BURST_COST)) {
 			Ship burster = selectBurstingShip(fireableShips);
 			fireableShips.remove(burster);
 			specialAction = fireBurst(burster);
+			spend(BURST_COST);
 		}
-		
+
 		indexedPlannedShots = new HashMap<Integer, ShipAction>();
 		List<ShipAction> plannedShots;
 		if (lastResponse != null) {
-			
-			List<ShotResult> shotResults = transformShotResults(Arrays.asList(lastResponse.shipActionResults));
-			plannedShots = unloadArsenal(fireableShips, shotResults);
+
+			List<HitReport> oldHits = new ArrayList<HitReport>(Arrays.asList(lastResponse.hitReport));
+			plannedShots = unloadArsenal(fireableShips, oldHits);
 		} else {
 			plannedShots = new ArrayList<ShipAction>();
 		}
-		
-		
+
+
 		if (!fireableShips.isEmpty()) {
 			addDiagonalShots(plannedShots, fireableShips);
 		}
+		
+//		// testing
+//		ShipAction specialAction = new ShipAction(mainShip.ID, mainShip.xCoord + 1, mainShip.yCoord + 1,Action.MoveV, -1);
+//		mainShip.move(mainShip.xCoord + 1, mainShip.yCoord + 1);
+//		List<ShipAction> plannedShots = new ArrayList<ShipAction>();
+		
 		return translateToJSON(plannedShots, specialAction);
 	}
-	
+
 	/**
 	 * Translates our game plan to JSON.
 	 * 
@@ -141,27 +159,29 @@ public class ForeverClient extends TestClient {
 		for (ShipAction sa : plannedShots) {
 			actions.add(sa.toJSONObject());
 		}
-		actions.add(specialAction.toJSONObject());
+		if (specialAction != null) {
+			actions.add(specialAction.toJSONObject());
+		}
 		turnObj.put("shipActions", actions);
 		return turnObj;
 	}
-	
+
 	/**
 	 * Returns resources we can spend.
 	 */
 	private int availableResources() {
 		return (resources - usedResources);
 	}
-	
+
 	/**
 	 * Returns whether we can spend the given amount of resources.
 	 * 
 	 * @param amount The amount to check for.
 	 */
 	private boolean canSpend(int amount) {
-		return (availableResources() >= amount);
+		return (availableResources() >= amount + MOVE_COST_MAIN);
 	}
-	
+
 	/**
 	 * Marks the amount of resources as spent.
 	 * 
@@ -175,7 +195,7 @@ public class ForeverClient extends TestClient {
 	public void handleInterrupt(ServerResponse sr) {
 		System.err.println("Your data is incorrect, and my worldview has been shattered. I must die now.");
 	}
-	
+
 	/**
 	 * Plans diagonal shots to search for and destroy the enemy.
 	 * 
@@ -190,7 +210,7 @@ public class ForeverClient extends TestClient {
 			initialFireX += loopsCompleted;
 			while (initialFireX < 100 || initialFireY < 100) {
 				while (fireX < 100 && fireY < 100) {
-					if (fireableShips.isEmpty() || !canSpend(50)) {
+					if (fireableShips.isEmpty() || !canSpend(FIRE_COST)) {
 						return;
 					} else {
 						// fire:
@@ -200,7 +220,7 @@ public class ForeverClient extends TestClient {
 						sa.actionX = fireX;
 						sa.actionY = fireY;
 						plannedShots.add(sa);
-						spend(50);
+						spend(FIRE_COST);
 						fireY++;
 						fireX++;
 					}
@@ -225,7 +245,7 @@ public class ForeverClient extends TestClient {
 			}
 		}
 	}
-	
+
 	/**
 	 * Transforms all applicable ActionResults into ShotReports. Each ActionResult is checked 
 	 * whether it is reporting a shot's result, and if so, converted into a ShotReport.
@@ -243,7 +263,7 @@ public class ForeverClient extends TestClient {
 		}
 		return shots;
 	}
-	
+
 	/**
 	 * Selects a ship to do the burst ability. The first destroyer found is selected.
 	 * 
@@ -258,9 +278,9 @@ public class ForeverClient extends TestClient {
 		}
 		return null;
 	}
-	
+
 	private ArrayList<Ship> placeShips(){
-	
+
 		ArrayList<Ship> list = new ArrayList<Ship>();
 		//(int i, int h, ShipType t, int x, int y, String o)
 		mainShip = new Ship(0, 60, ShipType.Main, 79, 80, "V");
@@ -296,108 +316,172 @@ public class ForeverClient extends TestClient {
 		return count;
 	}
 	
+	int turn = 0;
+	
 	/**
-	 * Move ships, if they were hit. Main ship has highest priority. Pilots take priorities over destroyers.
-	 * @param hitReports Hit reports for the previous turn.
-	 * @param myShips All the ships currently existing.
+	 * Detects which ships were hit.
+	 * 
+	 * @param hits The hit reports.
+	 * @param pings The ping reports.
+	 * @param ships The current ships.
+	 * @return The ships that were hit, in order of priority.
 	 */
-	private ShipAction moveShips(List<HitReport> hitReports, List<Ship> myShips, List<PingReport> pingReports) {
-		// flags
-		ShipAction myResponse = null;
-		Ship shipToMove = null;
-		boolean mainHit = false;
-		
-		List<Ship> destroyersHit = new ArrayList<Ship>();
-		List<Ship> pilotsHit = new ArrayList<Ship>();
-		
-		ArrayList<Ship> shipsHit = new ArrayList<Ship>();
-		for (HitReport report : hitReports) {
-			if (report.hit) {
-				// figure out what was hit
-				for (Ship ship : myShips) {
-					if (ship.contains(new Point(report.xCoord, report.yCoord))) {
-//					if (report.xCoord == ship.xCoord && report.yCoord == ship.yCoord) {
-						shipsHit.add(ship);
-						
-						// set flags
-						if (ship.type == ShipType.Main) {
-							mainHit = true;
-						} else if (ship.type == ShipType.Destroyer) {
-							destroyersHit.add(ship);
-						} else {
-							pilotsHit.add(ship);
+	private List<Ship> detectShipHits(List<HitReport> hits, List<PingReport> pings, List<Ship> ships) {
+		List<Ship> allHits = new ArrayList<Ship>();
+		Ship mainHit = null;
+		Ship mainPing = null;
+		Ship pilotHit = null;
+		Ship pilotPing = null;
+		Ship destHit = null;
+		Ship destPing = null;
+		for (Ship s : ships) {
+			for (HitReport hr : hits) {
+				if (s.contains(new Point(hr.xCoord, hr.yCoord))) {
+					JOptionPane.showConfirmDialog(null, "Collision at ("+s.xCoord+", "+s.yCoord+") on turn " + turn);
+					switch (s.type) {
+					case Main:
+						if (mainHit == null || mainHit.health > s.health) {
+							mainHit = s;
 						}
+						break;
 						
+					case Destroyer:
+						if (destHit == null || destHit.health > s.health) {
+							destHit = s;
+						}
+						break;
+						
+					case Pilot:
+						if (pilotHit == null || pilotHit.health > s.health) {
+							pilotHit = s;
+						}
 						break;
 					}
 				}
 			}
-		}
-		
-		// decide what to move
-		if (mainHit) {
-			mainShip.moveRandom(myShips);
-			shipToMove = mainShip;
-
-		} else if (destroyersHit.size() > 0 && pilotsHit.size() > 0 && numDestroyersLeft(myShips) == 1) {
-			destroyersHit.get(0).moveRandom(myShips);
-			shipToMove = destroyersHit.get(0);
-			
-		} else if (destroyersHit.size() > 0 && pilotsHit.size() > 0) {
-			pilotsHit.get(0).moveRandom(myShips);
-			shipToMove = pilotsHit.get(0);
-		} else if (destroyersHit.size() > 0 || pilotsHit.size() > 0) {
-			if (destroyersHit.size() > 0) {
-				destroyersHit.get(0).moveRandom(myShips);
-				shipToMove = destroyersHit.get(0);
-			} else {
-				pilotsHit.get(0).moveRandom(myShips);
-				shipToMove = pilotsHit.get(0);
-			}
-		} else {
-			
-			// check ping situation
-		
-			for (PingReport ping : pingReports) {
-				if (ping.shipID == mainShip.ID) {
-					shipToMove = mainShip;
-					break;
-				} else {
-					// move any of the others
-					Ship pilotFound = null;
-					for (Ship otherShip : myShips) {
-						if (otherShip.ID == ping.shipID) {
-							shipToMove = otherShip; // inefficient
+			for (PingReport pr : pings) {
+				if (s.ID == pr.shipID) {
+					switch (s.type) {
+					case Main:
+						if (mainPing == null || mainPing.health > s.health) {
+							mainPing = s;
 						}
+						break;
+						
+					case Destroyer:
+						if (destPing == null || destPing.health > s.health) {
+							destPing = s;
+						}
+						break;
+						
+					case Pilot:
+						if (pilotPing == null || pilotPing.health > s.health) {
+							pilotPing = s;
+						}
+						break;
 					}
 				}
 			}
-			
+			if (mainHit != null) {
+				allHits.add(mainHit);
+			}
+			if (pilotHit != null) {
+				allHits.add(pilotHit);
+			}
+			if (pilotPing != null && pilotPing != pilotHit) {
+				allHits.add(pilotPing);
+			}
+			if (destHit != null) {
+				allHits.add(destHit);
+			}
+			if (destPing != null && destPing != destHit) {
+				allHits.add(destPing);
+			}
+		}
+		return allHits;
+	}
+
+	/**
+	 * Move hit ships, if they can be moved.
+	 * 
+	 * @param hitShips A priority list of ships to move. Highest priority is at the
+	 * top of the list.
+	 * @param fireableShips All the ships, to check for collisions in. The hit ship is
+	 * removed from this.
+	 * @return The ShipAction if a ship is moved, or null otherwise.
+	 */
+	private ShipAction moveShip(List<Ship> hitShips, List<Ship> fireableShips) {
+		Ship toMove = null;
+		for (Ship s : hitShips) {
+			switch (s.type) {
+			case Main:
+				if (availableResources() >= MOVE_COST_MAIN) {
+					spend(MOVE_COST_MAIN);
+					toMove = s;
+					break;
+				}
+				break;
+				
+			case Pilot:
+				if (availableResources() >= MOVE_COST_PILOT) {
+					spend(MOVE_COST_PILOT);
+					toMove = s;
+					break;
+				}
+				break;
+				
+			case Destroyer:
+				if (availableResources() >= MOVE_COST_DESTROY) {
+					spend(MOVE_COST_DESTROY);
+					toMove = s;
+					break;
+				}
+				break;
+			}
+		}
+		
+		if (toMove == null) {
 			return null;
 		}
 		
-		boolean isHoriz = shipToMove.orientation.equals("H") ? true : false;
+		fireableShips.remove(toMove);
 		
-		if (isHoriz) {
-			myResponse = new ShipAction(shipToMove.ID, shipToMove.xCoord, shipToMove.yCoord, Action.MoveH, 0);
-		} else {
-			myResponse = new ShipAction(shipToMove.ID, shipToMove.xCoord, shipToMove.yCoord, Action.MoveV, 0);
+		ShipAction movement = new ShipAction(toMove.ID);
+		boolean horz = Math.random() > 0.5;
+		movement.actionID = (horz) ? ShipAction.Action.MoveH : ShipAction.Action.MoveV;
+		
+		java.util.Random rng = new java.util.Random();
+		// keep going until we find a clear space:
+		while (true) {
+			int x, y;
+			if (horz) {
+				x = rng.nextInt(100 - (toMove.width - 1));
+				y = rng.nextInt(100);
+			} else {
+				y = rng.nextInt(100 - (toMove.width - 1));
+				x = rng.nextInt(100);
+			}
+			boolean collides = false;
+			for (Ship s : fireableShips) {
+				if (s.contains(new Point(x, y))) {
+					collides = true;
+					break;
+				}
+			}
+			movement.actionX = x;
+			movement.actionY = y;
+			if (!collides) {
+				break;
+			}
 		}
-		
-		if (shipToMove != null) {
-			myShips.remove(shipToMove);
-		}
-		
-		return myResponse;
-		
+		return movement;
 	}
-	
+
 	public ShipAction fireBurst(Ship s){
 		ShipAction sa = new ShipAction(s.ID);
 		sa.actionID = ShipAction.Action.BurstShot;
 		sa.actionX = (int) (Math.random() * 97 + 1);
 		sa.actionY = (int) (Math.random() * 97 + 1);
-		System.out.println(":: - " + sa.actionX + ", " + sa.actionY);
 		return sa;
 	}
 
@@ -408,22 +492,27 @@ public class ForeverClient extends TestClient {
 	 * @param results Results of shot actions.
 	 * @return A list of the firing actions.
 	 */
-	private List<ShipAction> unloadArsenal(List<Ship> fireableShips, Collection<ShotResult> results) {
+	private List<ShipAction> unloadArsenal(List<Ship> fireableShips, Collection<HitReport> hits) {
 		List<ShipAction> fireActions = new ArrayList<ShipAction>();
-		for (ShotResult sr : results) {
+		for (HitReport hr : hits) {
 			if (fireableShips.size() > UNLOAD_BULLET_COUNT) {
-				if (sr.result.equals("S")) {
+				if (hr.hit) {
 					for (int i = 0; i < UNLOAD_BULLET_COUNT; i++) {
 						if (fireableShips.size() == 0) {
 							return fireActions;
 						}
-						int id = (fireableShips.remove(0)).ID;
-						ShipAction sa = new ShipAction(id);
-						sa.actionID = ShipAction.Action.Fire;
-						sa.actionX = sr.x;
-						sa.actionY = sr.y;
-						indexedPlannedShots.put(sa.shipID, sa);
-						fireActions.add(sa);
+						if (canSpend(FIRE_COST) ) {
+							int id = (fireableShips.remove(0)).ID;
+							ShipAction sa = new ShipAction(id);
+							sa.actionID = ShipAction.Action.Fire;
+							sa.actionX = hr.xCoord;
+							sa.actionY = hr.yCoord;
+							indexedPlannedShots.put(sa.shipID, sa);
+							fireActions.add(sa);
+							
+							// subtract cost
+							spend(FIRE_COST);
+						}
 					}
 				}
 			} else {
