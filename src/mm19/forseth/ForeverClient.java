@@ -5,7 +5,6 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
 import mm19.objects.Ship;
 import mm19.objects.ShipAction;
 import mm19.objects.ShotResult;
@@ -58,7 +57,7 @@ public class ForeverClient extends TestClient {
 		List<ShipAction> fireActions = new ArrayList<ShipAction>();
 		for (ShotResult sr : results) {
 			if (fireableShips.size() > UNLOAD_BULLET_COUNT) {
-				if (sr == null) { // ar .
+				if (sr.result.equals("S")) {
 					for (int i = 0; i < UNLOAD_BULLET_COUNT; i++) {
 						int id = (fireableShips.remove(0)).ID;
 						ShipAction sa = new ShipAction(id);
