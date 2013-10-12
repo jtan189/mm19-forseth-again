@@ -48,6 +48,11 @@ public class Ship {
 		yCoord = y;
 	}
 	
+	public boolean collides(Ship friend) {
+		// TODO implement
+		return false;
+	}
+	
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
