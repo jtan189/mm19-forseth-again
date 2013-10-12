@@ -108,11 +108,12 @@ public class ForeverClient extends TestClient {
 		ShipAction specialAction = null;
 
 		// TODO: Check for pings on us as well
-		if (lastResponse != null && canSpend(0)) { // if not on first turn; moving is high priority
+		if (lastResponse != null) { // spend check is in moveShip
 			List<HitReport> hits = Arrays.asList(sr.hitReport);
 			List<PingReport> pings = Arrays.asList(sr.pingReport);
-			specialAction = moveShips(hits, pings, fireableShips); // cost of moving is subtracted within moveShips()		
-
+			List<Ship> potentialHits = detectShipHits(hits, pings, fireableShips);
+			specialAction = moveShip(potentialHits, fireableShips);
+			// cost of moving is subtracted within moveShips()
 		}
 		if (specialAction == null && canSpend(BURST_COST)) {
 			Ship burster = selectBurstingShip(fireableShips);
@@ -393,10 +394,11 @@ public class ForeverClient extends TestClient {
 	 * 
 	 * @param hitShips A priority list of ships to move. Highest priority is at the
 	 * top of the list.
-	 * @param allShips All the ships, to check for collisions in.
+	 * @param fireableShips All the ships, to check for collisions in. The hit ship is
+	 * removed from this.
 	 * @return The ShipAction if a ship is moved, or null otherwise.
 	 */
-	private ShipAction moveShip(List<Ship> hitShips, List<Ship> allShips) {
+	private ShipAction moveShip(List<Ship> hitShips, List<Ship> fireableShips) {
 		Ship toMove = null;
 		for (Ship s : hitShips) {
 			switch (s.type) {
@@ -430,6 +432,8 @@ public class ForeverClient extends TestClient {
 			return null;
 		}
 		
+		fireableShips.remove(toMove);
+		
 		ShipAction movement = new ShipAction(toMove.ID);
 		boolean horz = Math.random() > 0.5;
 		movement.actionID = (horz) ? ShipAction.Action.MoveH : ShipAction.Action.MoveV;
@@ -446,7 +450,7 @@ public class ForeverClient extends TestClient {
 				x = rng.nextInt(100);
 			}
 			boolean collides = false;
-			for (Ship s : allShips) {
+			for (Ship s : fireableShips) {
 				if (s.contains(new Point(x, y))) {
 					collides = true;
 					break;
