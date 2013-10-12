@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Map;
 
 import javax.swing.JOptionPane;
+
+import mm19.objects.ActionResult;
+
 import javax.swing.JPanel;
 
 import mm19.objects.ActionResult;
@@ -202,10 +205,14 @@ public class ForeverClient extends TestClient {
 				initialFireX += 6;
 				fireX = initialFireX;
 				fireY = initialFireY;
+				if (initialFireX > 100) {
+					fireY = 100;
+				}
 			} else {
 				fireX = 0;
 				initialFireY += 6;
 				fireY = initialFireY;
+				System.out.println("initialY has incremented!"); //Testing
 			}
 		}
 	}
