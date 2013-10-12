@@ -7,7 +7,7 @@ import mm19.testclient.sam.TestClientSam;
 public class TestClientRunner {
 
     public static void main(String args[]) {
-        String name = "Give_me_a_name!";
+        String name = "Forseth Forever";
         if(args.length >= 1) {
             name = args[0];
         }
