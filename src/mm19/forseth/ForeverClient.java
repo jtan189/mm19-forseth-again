@@ -19,6 +19,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+
 import mm19.objects.ActionResult;
 
 import mm19.objects.ActionResult;
@@ -40,6 +43,10 @@ public class ForeverClient extends TestClient {
 	private int fireY = 0;
 	private int initialFireX = 0;
 	private int initialFireY = 0;
+	
+	private int resources = 0;
+	
+	private int usedResources = 0;
 	
 	// all current ships
 	private Ship[] ships;
@@ -73,10 +80,12 @@ public class ForeverClient extends TestClient {
 	@Override
 	public void processResponse(ServerResponse sr) {
 		lastResponse = sr;
+		resources = sr.resources;
 	}
 
 	@Override
 	public JSONObject prepareTurn(ServerResponse sr) {
+		usedResources = 0;
 		JSONObject turnObj = new JSONObject();
 		token = sr.playerToken;
 		ships = sr.ships;
@@ -123,12 +132,37 @@ public class ForeverClient extends TestClient {
 		JSONObject turnObj = new JSONObject();
 		turnObj.put("PlayerKey", token);
 		Collection<JSONObject> actions = new ArrayList<JSONObject>();
-		for (ShipAction sa : plannedShots) {
-			actions.add(sa.toJSONObject());
-		}
-		actions.add(specialAction.toJSONObject());
+		//for (ShipAction sa : plannedShots) {
+		//	actions.add(sa.toJSONObject());
+		//}
+		//actions.add(specialAction.toJSONObject());
 		turnObj.put("shipActions", actions);
 		return turnObj;
+	}
+	
+	/**
+	 * Returns resources we can spend.
+	 */
+	private int availableResources() {
+		return (resources - usedResources);
+	}
+	
+	/**
+	 * Returns whether we can spend the given amount of resources.
+	 * 
+	 * @param amount The amount to check for.
+	 */
+	private boolean canSpend(int amount) {
+		return (availableResources() >= amount);
+	}
+	
+	/**
+	 * Marks the amount of resources as spent.
+	 * 
+	 * @param amount The amount of resources to spend.
+	 */
+	private void spend(int amount) {
+		usedResources += amount;
 	}
 
 	@Override
@@ -144,8 +178,24 @@ public class ForeverClient extends TestClient {
 	 * @param fireableShips The ships that may still fire at the enemy.
 	 */
 	private void addDiagonalShots(List<ShipAction> plannedShots, List<Ship> fireableShips) {
-		System.out.println("IT GETS HERE");
-		while (initialFireX < 100 && initialFireY < 100) {
+		while (true) {
+			fireX += 5;
+			if (fireX > 99) {
+				fireX = 0;
+			}
+			if (fireableShips.isEmpty() || !canSpend(50)) {
+				return;
+			} else {
+				Ship toFire = fireableShips.remove(0);
+				ShipAction sa = new ShipAction(toFire.ID);
+				sa.actionID = ShipAction.Action.Fire;
+				sa.actionX = fireX;
+				sa.actionY = fireY;
+				plannedShots.add(sa);
+				spend(50);
+			}
+		}
+		/*while (initialFireX < 100 && initialFireY < 100) {
 			while (fireX < 100 && fireY < 100) {
 				
 				if (fireableShips.isEmpty()) {
@@ -172,7 +222,7 @@ public class ForeverClient extends TestClient {
 				initialFireY += 6;
 				fireY = initialFireY;
 			}
-		}
+		}*/
 	}
 	
 	/**
