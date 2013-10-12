@@ -1,34 +1,29 @@
 package mm19.forseth;
 
-import java.awt.Point;
 import java.util.ArrayList;
 
 import org.json.JSONObject;
 
-import mm19.objects.PingReport;
 import mm19.objects.Ship;
 import mm19.objects.Ship.ShipType;
 import mm19.objects.HitReport;
-import mm19.objects.Ship;
-import mm19.objects.Ship.ShipType;
 import mm19.objects.ShipAction.Action;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.swing.JOptionPane;
+<<<<<<< HEAD
 
 import mm19.objects.ActionResult;
-
+=======
 import javax.swing.JPanel;
+>>>>>>> e955a6000b70c40d2689175c368ac84b1ed5de40
 
 import mm19.objects.ActionResult;
-import mm19.objects.Ship;
 import mm19.objects.ShipAction;
 import mm19.objects.ShotResult;
 import mm19.response.ServerResponse;
@@ -46,7 +41,6 @@ public class ForeverClient extends TestClient {
 	private int fireY = 0;
 	private int initialFireX = 0;
 	private int initialFireY = 0;
-	private int loopsCompleted = 0;
 	
 	private int resources = 0;
 	
@@ -101,9 +95,7 @@ public class ForeverClient extends TestClient {
 		// TODO: Check for pings on us as well
 		if (lastResponse != null) { // if not on first turn
 			List<HitReport> reports = Arrays.asList(lastResponse.hitReport);
-			List<PingReport> pings = Arrays.asList(lastResponse.pingReport);
-			specialAction = moveShips(reports, fireableShips, pings);
-			
+//			specialAction = moveShips(reports, fireableShips);
 		}
 		if (specialAction == null) {
 			Ship burster = selectBurstingShip(fireableShips);
@@ -184,44 +176,36 @@ public class ForeverClient extends TestClient {
 	 * @param fireableShips The ships that may still fire at the enemy.
 	 */
 	private void addDiagonalShots(List<ShipAction> plannedShots, List<Ship> fireableShips) {
-		
-
-		while(true){
-			initialFireX += loopsCompleted;
-			while (initialFireX < 100 || initialFireY < 100) {
-				while (fireX < 100 && fireY < 100) {
-					if (fireableShips.isEmpty() || !canSpend(50)) {
-						return;
-					} else {
-						// fire:
-						Ship toFire = fireableShips.remove(0);
-						ShipAction sa = new ShipAction(toFire.ID);
-						sa.actionID = ShipAction.Action.Fire;
-						sa.actionX = fireX;
-						sa.actionY = fireY;
-						plannedShots.add(sa);
-						spend(50);
-						fireY++;
-						fireX++;
-					}
-				}
-				if (initialFireX < 100) {
-					initialFireX += 6;
-					fireX = initialFireX;
-					fireY = initialFireY;
-					if (initialFireX > 100){
-						initialFireY += loopsCompleted;
-					}
+		while (initialFireX < 100 && initialFireY < 100) {
+			while (fireX < 100 && fireY < 100) {
+				if (fireableShips.isEmpty() || !canSpend(50)) {
+					return;
 				} else {
-					fireX = 0;
-					initialFireY += 6;
-					fireY = initialFireY;
-					if (initialFireY > 100){
-						loopsCompleted++;
-						initialFireX = 0;
-						initialFireY = 0;
-					}
+					// fire:
+					Ship toFire = fireableShips.remove(0);
+					ShipAction sa = new ShipAction(toFire.ID);
+					sa.actionID = ShipAction.Action.Fire;
+					sa.actionX = fireX;
+					sa.actionY = fireY;
+					plannedShots.add(sa);
+					spend(50);
+					fireY++;
+					fireX++;
 				}
+			}
+			if (initialFireX < 100) {
+				initialFireX += 6;
+				fireX = initialFireX;
+				fireY = initialFireY;
+				//JOptionPane.showInputDialog("initialX has incremented to: " + initialFireX); //Testing
+				if (initialFireX > 100) {
+					fireY = 100;
+				}
+			} else {
+				fireX = 0;
+				initialFireY += 6;
+				fireY = initialFireY;
+				System.out.println("initialY has incremented!"); //Testing
 			}
 		}
 	}
@@ -301,7 +285,7 @@ public class ForeverClient extends TestClient {
 	 * @param hitReports Hit reports for the previous turn.
 	 * @param myShips All the ships currently existing.
 	 */
-	private ShipAction moveShips(List<HitReport> hitReports, List<Ship> myShips, List<PingReport> pingReports) {
+	private ShipAction moveShips(List<HitReport> hitReports, List<Ship> myShips) {
 		// flags
 		ShipAction myResponse = null;
 		Ship shipToMove = null;
@@ -315,8 +299,9 @@ public class ForeverClient extends TestClient {
 			if (report.hit) {
 				// figure out what was hit
 				for (Ship ship : myShips) {
-					if (ship.contains(new Point(report.xCoord, report.yCoord))) {
-//					if (report.xCoord == ship.xCoord && report.yCoord == ship.yCoord) {
+					
+					
+					if (report.xCoord == ship.xCoord && report.yCoord == ship.yCoord) {
 						shipsHit.add(ship);
 						
 						// set flags
@@ -334,51 +319,34 @@ public class ForeverClient extends TestClient {
 			}
 		}
 		
+		boolean moveHoriz = true;
+		if (Math.random() > .5) {
+			moveHoriz = false;
+		}
+		
 		// decide what to move
 		if (mainHit) {
-			mainShip.moveRandom(myShips);
+			mainShip.moveRandom(myShips, moveHoriz);
 			shipToMove = mainShip;
 
 		} else if (destroyersHit.size() > 0 && pilotsHit.size() > 0 && numDestroyersLeft(myShips) == 1) {
-			destroyersHit.get(0).moveRandom(myShips);
+			destroyersHit.get(0).moveRandom(myShips, moveHoriz);
 			shipToMove = destroyersHit.get(0);
 			
 		} else if (destroyersHit.size() > 0 && pilotsHit.size() > 0) {
-			pilotsHit.get(0).moveRandom(myShips);
+			pilotsHit.get(0).moveRandom(myShips, moveHoriz);
 			shipToMove = pilotsHit.get(0);
 		} else if (destroyersHit.size() > 0 || pilotsHit.size() > 0) {
 			if (destroyersHit.size() > 0) {
-				destroyersHit.get(0).moveRandom(myShips);
+				destroyersHit.get(0).moveRandom(myShips, moveHoriz);
 				shipToMove = destroyersHit.get(0);
 			} else {
-				pilotsHit.get(0).moveRandom(myShips);
+				pilotsHit.get(0).moveRandom(myShips, moveHoriz);
 				shipToMove = pilotsHit.get(0);
 			}
-		} else {
-			
-			// check ping situation
+		} 
 		
-			for (PingReport ping : pingReports) {
-				if (ping.shipID == mainShip.ID) {
-					shipToMove = mainShip;
-					break;
-				} else {
-					// move any of the others
-					Ship pilotFound = null;
-					for (Ship otherShip : myShips) {
-						if (otherShip.ID == ping.shipID) {
-							shipToMove = otherShip; // inefficient
-						}
-					}
-				}
-			}
-			
-			return null;
-		}
-		
-		boolean isHoriz = shipToMove.orientation.equals("H") ? true : false;
-		
-		if (isHoriz) {
+		if (moveHoriz) {
 			myResponse = new ShipAction(shipToMove.ID, shipToMove.xCoord, shipToMove.yCoord, Action.MoveH, 0);
 		} else {
 			myResponse = new ShipAction(shipToMove.ID, shipToMove.xCoord, shipToMove.yCoord, Action.MoveV, 0);
