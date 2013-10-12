@@ -55,8 +55,10 @@ def runGame(match_name, name1, name2, run_script1, run_script2):
                 bot2.kill()
             except OSError: pass
                 
+
     with open(match_name) as f:
         winner = f.readlines()[-1].rstrip()
+
     # the winner is in last line of the output file
     print json.loads(winner)
     return json.loads(winner)["winner"]
