@@ -226,7 +226,7 @@ public class ForeverClient extends TestClient {
 					}
 				}
 				if (initialFireX < 100) {
-					initialFireX += 6;
+					initialFireX += 5;
 					fireX = initialFireX;
 					fireY = initialFireY;
 					if (initialFireX > 100){
@@ -234,7 +234,7 @@ public class ForeverClient extends TestClient {
 					}
 				} else {
 					fireX = 0;
-					initialFireY += 6;
+					initialFireY += 5;
 					fireY = initialFireY;
 					if (initialFireY > 100){
 						loopsCompleted++;
