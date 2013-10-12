@@ -97,7 +97,7 @@ public class ForeverClient extends TestClient {
 
 	@Override
 	public JSONObject prepareTurn(ServerResponse sr) {
-		
+		turn++;
 		usedResources = 0;
 		JSONObject turnObj = new JSONObject();
 		token = sr.playerToken;
@@ -126,8 +126,8 @@ public class ForeverClient extends TestClient {
 		List<ShipAction> plannedShots;
 		if (lastResponse != null) {
 
-			List<ShotResult> shotResults = transformShotResults(Arrays.asList(lastResponse.shipActionResults));
-			plannedShots = unloadArsenal(fireableShips, shotResults);
+			List<HitReport> oldHits = new ArrayList<HitReport>(Arrays.asList(lastResponse.hitReport));
+			plannedShots = unloadArsenal(fireableShips, oldHits);
 		} else {
 			plannedShots = new ArrayList<ShipAction>();
 		}
@@ -232,7 +232,6 @@ public class ForeverClient extends TestClient {
 				fireX = 0;
 				initialFireY += 6;
 				fireY = initialFireY;
-				System.out.println("initialY has incremented!"); //Testing
 			}
 		}
 	}
@@ -307,6 +306,8 @@ public class ForeverClient extends TestClient {
 		return count;
 	}
 	
+	int turn = 0;
+	
 	/**
 	 * Detects which ships were hit.
 	 * 
@@ -326,6 +327,7 @@ public class ForeverClient extends TestClient {
 		for (Ship s : ships) {
 			for (HitReport hr : hits) {
 				if (s.contains(new Point(hr.xCoord, hr.yCoord))) {
+					JOptionPane.showConfirmDialog(null, "Collision at ("+s.xCoord+", "+s.yCoord+") on turn " + turn);
 					switch (s.type) {
 					case Main:
 						if (mainHit == null || mainHit.health > s.health) {
@@ -470,7 +472,6 @@ public class ForeverClient extends TestClient {
 		sa.actionID = ShipAction.Action.BurstShot;
 		sa.actionX = (int) (Math.random() * 97 + 1);
 		sa.actionY = (int) (Math.random() * 97 + 1);
-		System.out.println(":: - " + sa.actionX + ", " + sa.actionY);
 		return sa;
 	}
 
@@ -481,11 +482,11 @@ public class ForeverClient extends TestClient {
 	 * @param results Results of shot actions.
 	 * @return A list of the firing actions.
 	 */
-	private List<ShipAction> unloadArsenal(List<Ship> fireableShips, Collection<ShotResult> results) {
+	private List<ShipAction> unloadArsenal(List<Ship> fireableShips, Collection<HitReport> hits) {
 		List<ShipAction> fireActions = new ArrayList<ShipAction>();
-		for (ShotResult sr : results) {
+		for (HitReport hr : hits) {
 			if (fireableShips.size() > UNLOAD_BULLET_COUNT) {
-				if (sr.result.equals("S")) {
+				if (hr.hit) {
 					for (int i = 0; i < UNLOAD_BULLET_COUNT; i++) {
 						if (fireableShips.size() == 0) {
 							return fireActions;
@@ -494,8 +495,8 @@ public class ForeverClient extends TestClient {
 							int id = (fireableShips.remove(0)).ID;
 							ShipAction sa = new ShipAction(id);
 							sa.actionID = ShipAction.Action.Fire;
-							sa.actionX = sr.x;
-							sa.actionY = sr.y;
+							sa.actionX = hr.xCoord;
+							sa.actionY = hr.yCoord;
 							indexedPlannedShots.put(sa.shipID, sa);
 							fireActions.add(sa);
 							
