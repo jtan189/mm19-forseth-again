@@ -1,6 +1,7 @@
 package mm19.forseth;
 
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 
 import org.json.JSONObject;
@@ -47,6 +48,7 @@ public class ForeverClient2 extends TestClient {
 	public static final int FIRE_COST = 50;
 	public static final int BURST_COST = 250;
 
+	public static final int DELTA_NEAR_MAIN = 5;
 
 
 	private Ship mainShip;
@@ -226,7 +228,7 @@ public class ForeverClient2 extends TestClient {
 					}
 				}
 				if (initialFireX < 100) {
-					initialFireX += 6;
+					initialFireX += 5;
 					fireX = initialFireX;
 					fireY = initialFireY;
 					if (initialFireX > 100){
@@ -234,7 +236,7 @@ public class ForeverClient2 extends TestClient {
 					}
 				} else {
 					fireX = 0;
-					initialFireY += 6;
+					initialFireY += 5;
 					fireY = initialFireY;
 					if (initialFireY > 100){
 						loopsCompleted++;
@@ -334,7 +336,10 @@ public class ForeverClient2 extends TestClient {
 		Ship pilotPing = null;
 		Ship destHit = null;
 		Ship destPing = null;
+		boolean hitNearMain = false; // 
+		boolean pingNearMain = false; 
 		for (Ship s : ships) {
+
 			for (HitReport hr : hits) {
 				if (s.contains(new Point(hr.xCoord, hr.yCoord))) {
 					//JOptionPane.showConfirmDialog(null, "Collision at ("+s.xCoord+", "+s.yCoord+") on turn " + turn);
@@ -357,6 +362,16 @@ public class ForeverClient2 extends TestClient {
 						}
 						break;
 					}
+				} else if (s.type == ShipType.Main){
+					
+					// get area around main ship
+					Rectangle mainOutline = s.asRect();
+					Rectangle mainProximity = new Rectangle(mainOutline.x - DELTA_NEAR_MAIN, mainOutline.y - DELTA_NEAR_MAIN,
+							mainOutline.width + (2 * DELTA_NEAR_MAIN), mainOutline.height + (2 * DELTA_NEAR_MAIN));
+					
+					// determine if hit occurred near main
+					hitNearMain = mainProximity.contains(new Point(hr.xCoord, hr.yCoord));
+					
 				}
 			}
 			for (PingReport pr : pings) {
@@ -381,6 +396,11 @@ public class ForeverClient2 extends TestClient {
 						break;
 					}
 				}
+				
+				// determine if ping occurred near main
+				if (s.type == ShipType.Main && pr.distance < DELTA_NEAR_MAIN){
+					pingNearMain = true;
+				}
 			}
 			if (mainHit != null) {
 				allHits.add(mainHit);
@@ -396,6 +416,11 @@ public class ForeverClient2 extends TestClient {
 			}
 			if (destPing != null && destPing != destHit) {
 				allHits.add(destPing);
+			}
+			// if main has not been hit, but there have been near-hits or near-pings, add it to the move list
+			// (with low priority, i.e. if others were hit they take priority)
+			if (mainHit == null && (hitNearMain || pingNearMain)) {
+				allHits.add(mainShip);
 			}
 		}
 		return allHits;
