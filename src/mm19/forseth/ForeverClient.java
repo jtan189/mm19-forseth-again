@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import org.json.JSONObject;
 
+import mm19.objects.PingReport;
 import mm19.objects.Ship;
 import mm19.objects.Ship.ShipType;
 import mm19.objects.HitReport;
@@ -88,7 +89,8 @@ public class ForeverClient extends TestClient {
 		// TODO: Check for pings on us as well
 		if (lastResponse != null) { // if not on first turn
 			List<HitReport> reports = Arrays.asList(lastResponse.hitReport);
-			specialAction = moveShips(reports, fireableShips);
+			List<PingReport> pings = Arrays.asList(lastResponse.pingReport);
+			specialAction = moveShips(reports, fireableShips, pings);
 			
 		}
 		if (specialAction == null) {
@@ -251,7 +253,7 @@ public class ForeverClient extends TestClient {
 	 * @param hitReports Hit reports for the previous turn.
 	 * @param myShips All the ships currently existing.
 	 */
-	private ShipAction moveShips(List<HitReport> hitReports, List<Ship> myShips) {
+	private ShipAction moveShips(List<HitReport> hitReports, List<Ship> myShips, List<PingReport> pingReports) {
 		// flags
 		ShipAction myResponse = null;
 		Ship shipToMove = null;
@@ -304,6 +306,24 @@ public class ForeverClient extends TestClient {
 				shipToMove = pilotsHit.get(0);
 			}
 		} else {
+			
+			// check ping situation
+		
+			for (PingReport ping : pingReports) {
+				if (ping.shipID == mainShip.ID) {
+					shipToMove = mainShip;
+					break;
+				} else {
+					// move any of the others
+					Ship pilotFound = null;
+					for (Ship otherShip : myShips) {
+						if (otherShip.ID == ping.shipID) {
+							shipToMove = otherShip; // inefficient
+						}
+					}
+				}
+			}
+			
 			return null;
 		}
 		
