@@ -1,4 +1,4 @@
-if [ $# -lt 5 ]
+if [ $# -lt 4 ]
 then
 	echo "Syntax: $0 <bot1_name> <bot1_path> <bot2_name> <bot2_path>"
 	exit 1
