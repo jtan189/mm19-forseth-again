@@ -52,8 +52,8 @@ public class ForeverClient extends TestClient {
 	 */
 	private static final int UNLOAD_BULLET_COUNT = 3;
 
-	public ForeverClient() {
-		super("ForsethAgain");
+	public ForeverClient(String name) {
+		super(name);
 	}
 
 	@Override
@@ -79,21 +79,34 @@ public class ForeverClient extends TestClient {
 	public JSONObject prepareTurn(ServerResponse sr) {
 		JSONObject turnObj = new JSONObject();
 		token = sr.playerToken;
-		ships = lastResponse.ships;
-		List<HitReport> reports = Arrays.asList(lastResponse.hitReport);
-		List<Ship> fireableShips = Arrays.asList(ships);
+		ships = sr.ships;
+		
+		List<Ship> fireableShips = new ArrayList<Ship>(Arrays.asList(ships));
 		Collection<JSONObject> actions = new ArrayList<JSONObject>();
 		ShipAction specialAction = null;
+		
 		// TODO: Check for pings on us as well
-		specialAction = moveShips(reports, fireableShips);
+		if (lastResponse != null) { // if not on first turn
+			List<HitReport> reports = Arrays.asList(lastResponse.hitReport);
+			specialAction = moveShips(reports, fireableShips);
+		}
 		if (specialAction == null) {
 			Ship burster = selectBurstingShip(fireableShips);
 			fireableShips.remove(burster);
 			specialAction = fireBurst(burster);
 		}
-		List<ShotResult> shotResults = transformShotResults(Arrays.asList(sr.shipActionResults));
+		
 		indexedPlannedShots = new HashMap<Integer, ShipAction>();
-		List<ShipAction> plannedShots = unloadArsenal(fireableShips, shotResults);
+		List<ShipAction> plannedShots;
+		if (lastResponse != null) {
+			
+			List<ShotResult> shotResults = transformShotResults(Arrays.asList(lastResponse.shipActionResults));
+			plannedShots = unloadArsenal(fireableShips, shotResults);
+		} else {
+			plannedShots = new ArrayList<ShipAction>();
+		}
+		
+		
 		addDiagonalShots(plannedShots, fireableShips);
 		return translateToJSON(plannedShots, specialAction);
 	}
@@ -129,6 +142,7 @@ public class ForeverClient extends TestClient {
 	 * @param fireableShips The ships that may still fire at the enemy.
 	 */
 	private void addDiagonalShots(List<ShipAction> plannedShots, List<Ship> fireableShips) {
+		System.out.println("IT GETS HERE");
 		while (initialFireX < 100 && initialFireY < 100) {
 			while (fireX < 100 && fireY < 100) {
 				

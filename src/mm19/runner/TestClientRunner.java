@@ -1,8 +1,8 @@
 package mm19.runner;
 
+import mm19.forseth.ForeverClient;
 import mm19.testclient.TestClient;
 import mm19.testclient.TestClientException;
-import mm19.testclient.sam.TestClientSam;
 
 public class TestClientRunner {
 
@@ -11,7 +11,7 @@ public class TestClientRunner {
         if(args.length >= 1) {
             name = args[0];
         }
-        TestClient tc1 = new TestClientSam(name);
+        TestClient tc1 = new ForeverClient(name);
 
         try {
             tc1.connect();
