@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import javax.swing.JOptionPane;
+
 import mm19.response.ServerResponse;
 import mm19.response.ServerResponseException;
 import mm19.testclient.TestClient;
@@ -32,7 +34,6 @@ public class Requester extends Thread{
 				
 				// Block until the server sends you something
 				String s = in.readLine();
-				
 				// Formulate a ServerResponse object from the server's response
 				ServerResponse sr = new ServerResponse(new JSONObject(s));
 				System.out.println(sr.toString());

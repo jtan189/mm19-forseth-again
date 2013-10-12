@@ -2,3 +2,6 @@
 *~
 
 bin
+
+# meld stuff
+*.orig

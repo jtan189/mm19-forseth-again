@@ -21,7 +21,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import mm19.objects.ActionResult;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+
 import mm19.objects.ActionResult;
 import mm19.objects.Ship;
 import mm19.objects.ShipAction;
@@ -41,6 +43,10 @@ public class ForeverClient extends TestClient {
 	private int fireY = 0;
 	private int initialFireX = 0;
 	private int initialFireY = 0;
+	
+	private int resources = 0;
+	
+	private int usedResources = 0;
 	
 	// all current ships
 	private Ship[] ships;
@@ -74,10 +80,12 @@ public class ForeverClient extends TestClient {
 	@Override
 	public void processResponse(ServerResponse sr) {
 		lastResponse = sr;
+		resources = sr.resources;
 	}
 
 	@Override
 	public JSONObject prepareTurn(ServerResponse sr) {
+		usedResources = 0;
 		JSONObject turnObj = new JSONObject();
 		token = sr.playerToken;
 		ships = sr.ships;
@@ -133,6 +141,31 @@ public class ForeverClient extends TestClient {
 		turnObj.put("shipActions", actions);
 		return turnObj;
 	}
+	
+	/**
+	 * Returns resources we can spend.
+	 */
+	private int availableResources() {
+		return (resources - usedResources);
+	}
+	
+	/**
+	 * Returns whether we can spend the given amount of resources.
+	 * 
+	 * @param amount The amount to check for.
+	 */
+	private boolean canSpend(int amount) {
+		return (availableResources() >= amount);
+	}
+	
+	/**
+	 * Marks the amount of resources as spent.
+	 * 
+	 * @param amount The amount of resources to spend.
+	 */
+	private void spend(int amount) {
+		usedResources += amount;
+	}
 
 	@Override
 	public void handleInterrupt(ServerResponse sr) {
@@ -150,21 +183,20 @@ public class ForeverClient extends TestClient {
 
 		while (initialFireX < 100 && initialFireY < 100) {
 			while (fireX < 100 && fireY < 100) {
-				
-				if (fireableShips.isEmpty()) {
+				if (fireableShips.isEmpty() || !canSpend(50)) {
 					return;
+				} else {
+					// fire:
+					Ship toFire = fireableShips.remove(0);
+					ShipAction sa = new ShipAction(toFire.ID);
+					sa.actionID = ShipAction.Action.Fire;
+					sa.actionX = fireX;
+					sa.actionY = fireY;
+					plannedShots.add(sa);
+					spend(50);
+					fireY++;
+					fireX++;
 				}
-				
-				// fire:
-				Ship toFire = fireableShips.remove(0);
-				ShipAction sa = new ShipAction(toFire.ID);
-				sa.actionID = ShipAction.Action.Fire;
-				sa.actionX = fireX;
-				sa.actionY = fireY;
-				plannedShots.add(sa);
-				
-				fireY++;
-				fireX++;
 			}
 			if (initialFireX < 100) {
 				initialFireX += 6;
@@ -290,6 +322,7 @@ public class ForeverClient extends TestClient {
 		if (mainHit) {
 			mainShip.moveRandom(myShips);
 			shipToMove = mainShip;
+
 		} else if (destroyersHit.size() > 0 && pilotsHit.size() > 0 && numDestroyersLeft(myShips) == 1) {
 			destroyersHit.get(0).moveRandom(myShips);
 			shipToMove = destroyersHit.get(0);
@@ -335,8 +368,6 @@ public class ForeverClient extends TestClient {
 			myResponse = new ShipAction(shipToMove.ID, shipToMove.xCoord, shipToMove.yCoord, Action.MoveV, 0);
 		}
 		
-		System.out.println("*** ship hit and moved **\n" + shipToMove); // debug
-		
 		if (shipToMove != null) {
 			myShips.remove(shipToMove);
 		}
@@ -348,8 +379,9 @@ public class ForeverClient extends TestClient {
 	public ShipAction fireBurst(Ship s){
 		ShipAction sa = new ShipAction(s.ID);
 		sa.actionID = ShipAction.Action.BurstShot;
-		sa.actionX = (int) Math.random() * 97 + 1;
-		sa.actionY = (int) Math.random() * 97 + 1;
+		sa.actionX = (int) (Math.random() * 97 + 1);
+		sa.actionY = (int) (Math.random() * 97 + 1);
+		System.out.println(":: - " + sa.actionX + ", " + sa.actionY);
 		return sa;
 	}
 
