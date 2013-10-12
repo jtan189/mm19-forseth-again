@@ -184,7 +184,7 @@ public class ForeverClient extends TestClient {
 	 */
 	private void addDiagonalShots(List<ShipAction> plannedShots, List<Ship> fireableShips) {
 
-		while (initialFireX < 100 && initialFireY < 100) {
+		while (initialFireX < 100 || initialFireY < 100) {
 			while (fireX < 100 && fireY < 100) {
 				if (fireableShips.isEmpty() || !canSpend(50)) {
 					return;
@@ -205,14 +205,10 @@ public class ForeverClient extends TestClient {
 				initialFireX += 6;
 				fireX = initialFireX;
 				fireY = initialFireY;
-				if (initialFireX > 100) {
-					fireY = 100;
-				}
 			} else {
 				fireX = 0;
 				initialFireY += 6;
 				fireY = initialFireY;
-				System.out.println("initialY has incremented!"); //Testing
 			}
 		}
 	}
