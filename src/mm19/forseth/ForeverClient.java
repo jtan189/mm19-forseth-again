@@ -144,12 +144,11 @@ public class ForeverClient extends TestClient {
 		
 	}
 	
-	public ShipAction fireBurst(Ship){
-		ShipAction sa = new ShipAction(Ship.ID);
+	public ShipAction fireBurst(Ship s){
+		ShipAction sa = new ShipAction(s.ID);
 		sa.actionID = ShipAction.Action.BurstShot;
 		sa.actionX = (int) Math.random() * 98 + 1;
 		sa.actionY = (int) Math.random() * 98 + 1;
-		fireActions.add(sa);
 		return sa;
 	}
 
