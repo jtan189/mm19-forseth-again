@@ -139,6 +139,7 @@ public class ForeverClient extends TestClient {
 			// move the pilot
 		} else {
 			// move whatever was hit
+			// IMMA FFIRE MY LAZORSES
 		}
 		
 	}
