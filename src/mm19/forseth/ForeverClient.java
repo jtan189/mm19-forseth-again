@@ -109,8 +109,8 @@ public class ForeverClient extends TestClient {
 
 		// TODO: Check for pings on us as well
 		if (lastResponse != null && canSpend(0)) { // if not on first turn; moving is high priority
-			List<HitReport> reports = Arrays.asList(lastResponse.hitReport);
-			List<PingReport> pings = Arrays.asList(lastResponse.pingReport);
+			List<HitReport> reports = Arrays.asList(sr.hitReport);
+			List<PingReport> pings = Arrays.asList(sr.pingReport);
 			specialAction = moveShips(reports, fireableShips, pings); // cost of moving is subtracted within moveShips()		
 
 		}
@@ -305,117 +305,207 @@ public class ForeverClient extends TestClient {
 		}
 		return count;
 	}
-
+	
 	/**
-	 * Move ships, if they were hit. Main ship has highest priority. Pilots take priorities over destroyers.
-	 * @param hitReports Hit reports for the previous turn.
-	 * @param myShips All the ships currently existing.
+	 * Detects which ships were hit.
+	 * 
+	 * @param hits The hit reports.
+	 * @param pings The ping reports.
+	 * @param ships The current ships.
+	 * @return The ships that were hit, in order of priority.
 	 */
-	private ShipAction moveShips(List<HitReport> hitReports, List<Ship> myShips, List<PingReport> pingReports) {
-		// flags
-		ShipAction myResponse = null;
-		Ship shipToMove = null;
-		boolean mainHit = false;
-
-		List<Ship> destroyersHit = new ArrayList<Ship>();
-		List<Ship> pilotsHit = new ArrayList<Ship>();
-
-		ArrayList<Ship> shipsHit = new ArrayList<Ship>();
-		for (HitReport report : hitReports) {
-			if (report.hit) {
-				// figure out what was hit
-				for (Ship ship : myShips) {
-					if (ship.contains(new Point(report.xCoord, report.yCoord))) {
-						//					if (report.xCoord == ship.xCoord && report.yCoord == ship.yCoord) {
-						shipsHit.add(ship);
-
-						// set flags
-						if (ship.type == ShipType.Main) {
-							mainHit = true;
-						} else if (ship.type == ShipType.Destroyer) {
-							destroyersHit.add(ship);
-						} else {
-							pilotsHit.add(ship);
+	private List<Ship> detectShipHits(List<HitReport> hits, List<PingReport> pings, List<Ship> ships) {
+		List<Ship> allHits = new ArrayList<Ship>();
+		Ship mainHit = null;
+		Ship mainPing = null;
+		Ship pilotHit = null;
+		Ship pilotPing = null;
+		Ship destHit = null;
+		Ship destPing = null;
+		for (Ship s : ships) {
+			for (HitReport hr : hits) {
+				if (s.contains(new Point(hr.xCoord, hr.yCoord))) {
+					switch (s.type) {
+					case Main:
+						if (mainHit == null || mainHit.health > s.health) {
+							mainHit = s;
 						}
-
+						break;
+						
+					case Destroyer:
+						if (destHit == null || destHit.health > s.health) {
+							destHit = s;
+						}
+						break;
+						
+					case Pilot:
+						if (pilotHit == null || pilotHit.health > s.health) {
+							pilotHit = s;
+						}
 						break;
 					}
 				}
 			}
-		}
-
-		// decide what to move
-		if (mainHit) {
-			mainShip.moveRandom(myShips);
-			shipToMove = mainShip;
-
-		} else if (destroyersHit.size() > 0 && pilotsHit.size() > 0 && numDestroyersLeft(myShips) == 1) {
-			destroyersHit.get(0).moveRandom(myShips);
-			shipToMove = destroyersHit.get(0);
-
-		} else if (destroyersHit.size() > 0 && pilotsHit.size() > 0) {
-			pilotsHit.get(0).moveRandom(myShips);
-			shipToMove = pilotsHit.get(0);
-		} else if (destroyersHit.size() > 0 || pilotsHit.size() > 0) {
-			if (destroyersHit.size() > 0) {
-				destroyersHit.get(0).moveRandom(myShips);
-				shipToMove = destroyersHit.get(0);
-			} else {
-				pilotsHit.get(0).moveRandom(myShips);
-				shipToMove = pilotsHit.get(0);
-			}
-		} else {
-
-			// check ping situation
-
-			for (PingReport ping : pingReports) {
-				if (ping.shipID == mainShip.ID) {
-					shipToMove = mainShip;
-					break;
-				} else {
-					// move any of the others
-					for (Ship otherShip : myShips) {
-						if (otherShip.ID == ping.shipID) {
-							shipToMove = otherShip; // inefficient
+			for (PingReport pr : pings) {
+				if (s.ID == pr.shipID) {
+					switch (s.type) {
+					case Main:
+						if (mainPing == null || mainPing.health > s.health) {
+							mainPing = s;
 						}
+						break;
+						
+					case Destroyer:
+						if (destPing == null || destPing.health > s.health) {
+							destPing = s;
+						}
+						break;
+						
+					case Pilot:
+						if (pilotPing == null || pilotPing.health > s.health) {
+							pilotPing = s;
+						}
+						break;
 					}
 				}
 			}
-
-			return null;
-		}
-
-		boolean isHoriz = shipToMove.orientation.equals("H") ? true : false;
-
-		if (isHoriz) {
-			myResponse = new ShipAction(shipToMove.ID, shipToMove.xCoord, shipToMove.yCoord, Action.MoveH, 0);
-		} else {
-			myResponse = new ShipAction(shipToMove.ID, shipToMove.xCoord, shipToMove.yCoord, Action.MoveV, 0);
-		}
-
-		// subtract cost of ship
-		switch(shipToMove.type) {
-		case Main:
-			if (canSpend(MOVE_COST_MAIN)) {
-				spend(MOVE_COST_MAIN);
+			if (mainHit != null) {
+				allHits.add(mainHit);
 			}
-			break;
-		case Destroyer:
-			if (canSpend(MOVE_COST_DESTROY)) {
-				spend(MOVE_COST_DESTROY);
+			if (pilotHit != null) {
+				allHits.add(pilotHit);
 			}
-			break;
-		case Pilot:
-			if (canSpend(MOVE_COST_PILOT)) {
-				spend(MOVE_COST_PILOT);
+			if (pilotPing != null && pilotPing != pilotHit) {
+				allHits.add(pilotPing);
 			}
-			break;
+			if (destHit != null) {
+				allHits.add(destHit);
+			}
+			if (destPing != null && destPing != destHit) {
+				allHits.add(destPing);
+			}
 		}
+		return allHits;
+	}
 
-
-		if (shipToMove != null) {
-			myShips.remove(shipToMove);
+	/**
+	 * Move hit ships, if they can be moved.
+	 * 
+	 * @param hitShips A priority list of ships to move. Highest priority is at the
+	 * top of the list.
+	 * @return The ShipAction if a ship is moved, or null otherwise.
+	 */
+	private ShipAction moveShips(List<Ship> hitShips) {
+		Ship toMove = null;
+		for (Ship s : hitShips) {
+			switch (s.type) {
+			
+			}
 		}
+//		// flags
+//		ShipAction myResponse = null;
+//		Ship shipToMove = null;
+//		boolean mainHit = false;
+//
+//		List<Ship> destroyersHit = new ArrayList<Ship>();
+//		List<Ship> pilotsHit = new ArrayList<Ship>();
+//
+//		ArrayList<Ship> shipsHit = new ArrayList<Ship>();
+//		for (HitReport report : hitReports) {
+//			if (report.hit) {
+//				// figure out what was hit
+//				for (Ship ship : myShips) {
+//					if (ship.contains(new Point(report.xCoord, report.yCoord))) {
+//						//					if (report.xCoord == ship.xCoord && report.yCoord == ship.yCoord) {
+//						shipsHit.add(ship);
+//
+//						// set flags
+//						if (ship.type == ShipType.Main) {
+//							mainHit = true;
+//						} else if (ship.type == ShipType.Destroyer) {
+//							destroyersHit.add(ship);
+//						} else {
+//							pilotsHit.add(ship);
+//						}
+//
+//						break;
+//					}
+//				}
+//			}
+//		}
+//
+//		// decide what to move
+//		if (mainHit) {
+//			mainShip.moveRandom(myShips);
+//			shipToMove = mainShip;
+//
+//		} else if (destroyersHit.size() > 0 && pilotsHit.size() > 0 && numDestroyersLeft(myShips) == 1) {
+//			destroyersHit.get(0).moveRandom(myShips);
+//			shipToMove = destroyersHit.get(0);
+//
+//		} else if (destroyersHit.size() > 0 && pilotsHit.size() > 0) {
+//			pilotsHit.get(0).moveRandom(myShips);
+//			shipToMove = pilotsHit.get(0);
+//		} else if (destroyersHit.size() > 0 || pilotsHit.size() > 0) {
+//			if (destroyersHit.size() > 0) {
+//				destroyersHit.get(0).moveRandom(myShips);
+//				shipToMove = destroyersHit.get(0);
+//			} else {
+//				pilotsHit.get(0).moveRandom(myShips);
+//				shipToMove = pilotsHit.get(0);
+//			}
+//		} else {
+//
+//			// check ping situation
+//
+//			for (PingReport ping : pingReports) {
+//				if (ping.shipID == mainShip.ID) {
+//					shipToMove = mainShip;
+//					break;
+//				} else {
+//					// move any of the others
+//					for (Ship otherShip : myShips) {
+//						if (otherShip.ID == ping.shipID) {
+//							shipToMove = otherShip; // inefficient
+//						}
+//					}
+//				}
+//			}
+//
+//			return null;
+//		}
+//
+//		boolean isHoriz = shipToMove.orientation.equals("H") ? true : false;
+//
+//		if (isHoriz) {
+//			myResponse = new ShipAction(shipToMove.ID, shipToMove.xCoord, shipToMove.yCoord, Action.MoveH, 0);
+//		} else {
+//			myResponse = new ShipAction(shipToMove.ID, shipToMove.xCoord, shipToMove.yCoord, Action.MoveV, 0);
+//		}
+//
+//		// subtract cost of ship
+//		switch(shipToMove.type) {
+//		case Main:
+//			if (canSpend(MOVE_COST_MAIN)) {
+//				spend(MOVE_COST_MAIN);
+//			}
+//			break;
+//		case Destroyer:
+//			if (canSpend(MOVE_COST_DESTROY)) {
+//				spend(MOVE_COST_DESTROY);
+//			}
+//			break;
+//		case Pilot:
+//			if (canSpend(MOVE_COST_PILOT)) {
+//				spend(MOVE_COST_PILOT);
+//			}
+//			break;
+//		}
+//
+//
+//		if (shipToMove != null) {
+//			myShips.remove(shipToMove);
+//		}
 
 		return myResponse;
 
