@@ -139,6 +139,7 @@ public class ForeverClient extends TestClient {
 			// move the pilot
 		} else {
 			// move whatever was hit
+			// IMMA FFIRE MY LAZORSES
 		}
 		
 	}
@@ -154,7 +155,7 @@ public class ForeverClient extends TestClient {
 		List<ShipAction> fireActions = new ArrayList<ShipAction>();
 		for (ShotResult sr : results) {
 			if (fireableShips.size() > UNLOAD_BULLET_COUNT) {
-				if (sr == null) { // ar .
+				if (sr.result.equals("S")) {
 					for (int i = 0; i < UNLOAD_BULLET_COUNT; i++) {
 						int id = (fireableShips.remove(0)).ID;
 						ShipAction sa = new ShipAction(id);
