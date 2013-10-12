@@ -7,14 +7,10 @@ import org.json.JSONObject;
 import mm19.objects.Ship;
 import mm19.objects.Ship.ShipType;
 import mm19.objects.HitReport;
-import mm19.objects.Ship;
-import mm19.objects.Ship.ShipType;
 import mm19.objects.ShipAction.Action;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +19,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import mm19.objects.ActionResult;
-
-import mm19.objects.ActionResult;
-import mm19.objects.Ship;
 import mm19.objects.ShipAction;
 import mm19.objects.ShotResult;
 import mm19.response.ServerResponse;
