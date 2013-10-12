@@ -88,7 +88,7 @@ public class ForeverClient extends TestClient {
 		// TODO: Check for pings on us as well
 		if (lastResponse != null) { // if not on first turn
 			List<HitReport> reports = Arrays.asList(lastResponse.hitReport);
-			specialAction = moveShips(reports, fireableShips);
+//			specialAction = moveShips(reports, fireableShips);
 		}
 		if (specialAction == null) {
 			Ship burster = selectBurstingShip(fireableShips);
@@ -107,7 +107,9 @@ public class ForeverClient extends TestClient {
 		}
 		
 		
-		addDiagonalShots(plannedShots, fireableShips);
+		if (!fireableShips.isEmpty()) {
+			addDiagonalShots(plannedShots, fireableShips);
+		}
 		return translateToJSON(plannedShots, specialAction);
 	}
 	
@@ -145,6 +147,10 @@ public class ForeverClient extends TestClient {
 		System.out.println("IT GETS HERE");
 		while (initialFireX < 100 && initialFireY < 100) {
 			while (fireX < 100 && fireY < 100) {
+				
+				if (fireableShips.isEmpty()) {
+					return;
+				}
 				
 				// fire:
 				Ship toFire = fireableShips.remove(0);
@@ -258,6 +264,8 @@ public class ForeverClient extends TestClient {
 			if (report.hit) {
 				// figure out what was hit
 				for (Ship ship : myShips) {
+					
+					
 					if (report.xCoord == ship.xCoord && report.yCoord == ship.yCoord) {
 						shipsHit.add(ship);
 						
