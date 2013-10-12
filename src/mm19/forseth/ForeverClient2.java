@@ -34,7 +34,7 @@ import mm19.objects.ShotResult;
 import mm19.response.ServerResponse;
 import mm19.testclient.TestClient;
 
-public class ForeverClient extends TestClient {
+public class ForeverClient2 extends TestClient {
 
 	private String token;
 	public static final int MAP_WIDTH = 100;
@@ -70,9 +70,9 @@ public class ForeverClient extends TestClient {
 	/**
 	 * The number of bullets to unload on enemies we've detected.
 	 */
-	private static final int UNLOAD_BULLET_COUNT = 3;
+	private static final int UNLOAD_BULLET_COUNT = 5;
 
-	public ForeverClient(String name) {
+	public ForeverClient2(String name) {
 		super(name);
 	}
 
