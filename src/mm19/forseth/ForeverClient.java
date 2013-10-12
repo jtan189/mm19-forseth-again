@@ -6,23 +6,26 @@ import org.json.JSONObject;
 
 import mm19.objects.Ship;
 import mm19.objects.Ship.ShipType;
-
 import mm19.objects.HitReport;
 import mm19.objects.Ship;
 import mm19.objects.Ship.ShipType;
+import mm19.objects.ShipAction.Action;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import mm19.objects.ActionResult;
 
+import mm19.objects.ActionResult;
 import mm19.objects.Ship;
 import mm19.objects.ShipAction;
-
 import mm19.objects.ShotResult;
 import mm19.response.ServerResponse;
 import mm19.testclient.TestClient;
 
 public class ForeverClient extends TestClient {
+	
+	public static final int MAP_WIDTH = 100;
+	public static final int MAP_HEIGHT = 100;
 	
 	private Ship mainShip;
 
@@ -85,7 +88,7 @@ public class ForeverClient extends TestClient {
 		return list;
 	}
 
-	private int numDestroyersLeft(ArrayList<Ship> myShips) {
+	private int numDestroyersLeft(List<Ship> myShips) {
 		int count = 0;
 		for (Ship ship : myShips) {
 			if (ship.type == ShipType.Destroyer) {
@@ -100,12 +103,14 @@ public class ForeverClient extends TestClient {
 	 * @param hitReports Hit reports for the previous turn.
 	 * @param myShips All the ships currently existing.
 	 */
-	private void moveShips(ArrayList<HitReport> hitReports, ArrayList<Ship> myShips) {
-		
+	private ShipAction moveShips(List<HitReport> hitReports, List<Ship> myShips) {
 		// flags
+		ShipAction myResponse = null;
+		Ship shipToMove = null;
 		boolean mainHit = false;
-		boolean destroyerHit = false;
-		boolean pilotHit = false;
+		
+		List<Ship> destroyersHit = new ArrayList<Ship>();
+		List<Ship> pilotsHit = new ArrayList<Ship>();
 		
 		ArrayList<Ship> shipsHit = new ArrayList<Ship>();
 		for (HitReport report : hitReports) {
@@ -119,9 +124,9 @@ public class ForeverClient extends TestClient {
 						if (ship.type == ShipType.Main) {
 							mainHit = true;
 						} else if (ship.type == ShipType.Destroyer) {
-							destroyerHit = true;
+							destroyersHit.add(ship);
 						} else {
-							pilotHit = true;
+							pilotsHit.add(ship);
 						}
 						
 						break;
@@ -130,17 +135,44 @@ public class ForeverClient extends TestClient {
 			}
 		}
 		
+		boolean moveHoriz = true;
+		if (Math.random() > .5) {
+			moveHoriz = false;
+		}
+		
 		// decide what to move
 		if (mainHit) {
-			// move the main
-		} else if (destroyerHit && pilotHit && numDestroyersLeft(myShips) == 1) {
-			// move the destroyer
-		} else if (destroyerHit && pilotHit) {
-			// move the pilot
+			mainShip.moveRandom(myShips, moveHoriz);
+			shipToMove = mainShip;
+
+		} else if (destroyersHit.size() > 0 && pilotsHit.size() > 0 && numDestroyersLeft(myShips) == 1) {
+			destroyersHit.get(0).moveRandom(myShips, moveHoriz);
+			shipToMove = destroyersHit.get(0);
+			
+		} else if (destroyersHit.size() > 0 && pilotsHit.size() > 0) {
+			pilotsHit.get(0).moveRandom(myShips, moveHoriz);
+			shipToMove = pilotsHit.get(0);
+		} else if (destroyersHit.size() > 0 || pilotsHit.size() > 0) {
+			if (destroyersHit.size() > 0) {
+				destroyersHit.get(0).moveRandom(myShips, moveHoriz);
+				shipToMove = destroyersHit.get(0);
+			} else {
+				pilotsHit.get(0).moveRandom(myShips, moveHoriz);
+				shipToMove = pilotsHit.get(0);
+			}
+		} 
+		
+		if (moveHoriz) {
+			myResponse = new ShipAction(shipToMove.ID, shipToMove.xCoord, shipToMove.yCoord, Action.MoveH, 0);
 		} else {
-			// move whatever was hit
-			// IMMA FFIRE MY LAZORSES
+			myResponse = new ShipAction(shipToMove.ID, shipToMove.xCoord, shipToMove.yCoord, Action.MoveV, 0);
 		}
+		
+		if (shipToMove != null) {
+			myShips.remove(shipToMove);
+		}
+		
+		return myResponse;
 		
 	}
 
