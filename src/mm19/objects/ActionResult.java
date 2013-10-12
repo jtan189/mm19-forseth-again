@@ -4,6 +4,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ActionResult {
+	public enum Result {
+		SUCCESS, INSUFFICIENT, INCORRECT;
+	}
 	public int ID;
 	public String result;;
 	
