@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.JOptionPane;
+
 import mm19.objects.ActionResult;
 
 import mm19.objects.ActionResult;
@@ -144,7 +146,6 @@ public class ForeverClient extends TestClient {
 	 * @param fireableShips The ships that may still fire at the enemy.
 	 */
 	private void addDiagonalShots(List<ShipAction> plannedShots, List<Ship> fireableShips) {
-		System.out.println("IT GETS HERE"); //Testing - DELETE ME
 		while (initialFireX < 100 && initialFireY < 100) {
 			while (fireX < 100 && fireY < 100) {
 				
@@ -167,12 +168,15 @@ public class ForeverClient extends TestClient {
 				initialFireX += 6;
 				fireX = initialFireX;
 				fireY = initialFireY;
-				System.out.println("initialX has incremented to: " + initialFireX);
+				//JOptionPane.showInputDialog("initialX has incremented to: " + initialFireX); //Testing
+				if (initialFireX > 100) {
+					fireY = 100;
+				}
 			} else {
 				fireX = 0;
 				initialFireY += 6;
 				fireY = initialFireY;
-				System.out.println("initialY has incremented!");
+				System.out.println("initialY has incremented!"); //Testing
 			}
 		}
 	}
