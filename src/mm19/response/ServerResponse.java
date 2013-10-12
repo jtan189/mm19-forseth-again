@@ -1,5 +1,7 @@
 package mm19.response;
 
+import javax.swing.JOptionPane;
+
 import mm19.objects.ActionResult;
 import mm19.objects.HitReport;
 import mm19.objects.PingReport;
@@ -62,19 +64,25 @@ public class ServerResponse {
             // Getting responseCode
             responseCode = obj.getInt("responseCode");
 
+        	if(obj.has("resources")) {
+                resources = obj.getInt("resources");
+        	}
             // Getting error
             JSONArray err = obj.getJSONArray("error");
             error = new String[err.length()];
-
+            
             for(int i = 0; i < err.length(); i++) {
                 error[i] = err.getString(i);
             }
-
             // Getting playerToken
             playerToken = obj.getString("playerToken");
 
             // Getting playerName
             playerName = obj.getString("playerName");
+            
+
+
+
 
             // Getting ships
             JSONArray shipsObj = obj.getJSONArray("ships");
