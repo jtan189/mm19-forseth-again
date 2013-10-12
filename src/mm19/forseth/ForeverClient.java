@@ -132,10 +132,10 @@ public class ForeverClient extends TestClient {
 		JSONObject turnObj = new JSONObject();
 		turnObj.put("PlayerKey", token);
 		Collection<JSONObject> actions = new ArrayList<JSONObject>();
-		//for (ShipAction sa : plannedShots) {
-		//	actions.add(sa.toJSONObject());
-		//}
-		//actions.add(specialAction.toJSONObject());
+		for (ShipAction sa : plannedShots) {
+			actions.add(sa.toJSONObject());
+		}
+		actions.add(specialAction.toJSONObject());
 		turnObj.put("shipActions", actions);
 		return turnObj;
 	}
@@ -179,10 +179,6 @@ public class ForeverClient extends TestClient {
 	 */
 	private void addDiagonalShots(List<ShipAction> plannedShots, List<Ship> fireableShips) {
 		while (true) {
-			fireX += 5;
-			if (fireX > 99) {
-				fireX = 0;
-			}
 			if (fireableShips.isEmpty() || !canSpend(50)) {
 				return;
 			} else {
@@ -193,6 +189,10 @@ public class ForeverClient extends TestClient {
 				sa.actionY = fireY;
 				plannedShots.add(sa);
 				spend(50);
+				fireX += 5;
+				if (fireX > 99) {
+					fireX = 0;
+				}
 			}
 		}
 		/*while (initialFireX < 100 && initialFireY < 100) {
