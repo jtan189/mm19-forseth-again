@@ -1,5 +1,6 @@
 package mm19.forseth;
 
+import java.awt.Point;
 import java.util.ArrayList;
 
 import org.json.JSONObject;
@@ -20,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 import mm19.objects.ActionResult;
-
 import mm19.objects.ActionResult;
 import mm19.objects.Ship;
 import mm19.objects.ShipAction;
@@ -88,7 +88,8 @@ public class ForeverClient extends TestClient {
 		// TODO: Check for pings on us as well
 		if (lastResponse != null) { // if not on first turn
 			List<HitReport> reports = Arrays.asList(lastResponse.hitReport);
-//			specialAction = moveShips(reports, fireableShips);
+			specialAction = moveShips(reports, fireableShips);
+			
 		}
 		if (specialAction == null) {
 			Ship burster = selectBurstingShip(fireableShips);
@@ -144,7 +145,7 @@ public class ForeverClient extends TestClient {
 	 * @param fireableShips The ships that may still fire at the enemy.
 	 */
 	private void addDiagonalShots(List<ShipAction> plannedShots, List<Ship> fireableShips) {
-		System.out.println("IT GETS HERE");
+
 		while (initialFireX < 100 && initialFireY < 100) {
 			while (fireX < 100 && fireY < 100) {
 				
@@ -264,9 +265,8 @@ public class ForeverClient extends TestClient {
 			if (report.hit) {
 				// figure out what was hit
 				for (Ship ship : myShips) {
-					
-					
-					if (report.xCoord == ship.xCoord && report.yCoord == ship.yCoord) {
+					if (ship.contains(new Point(report.xCoord, report.yCoord))) {
+//					if (report.xCoord == ship.xCoord && report.yCoord == ship.yCoord) {
 						shipsHit.add(ship);
 						
 						// set flags
@@ -284,38 +284,38 @@ public class ForeverClient extends TestClient {
 			}
 		}
 		
-		boolean moveHoriz = true;
-		if (Math.random() > .5) {
-			moveHoriz = false;
-		}
-		
 		// decide what to move
 		if (mainHit) {
-			mainShip.moveRandom(myShips, moveHoriz);
+			mainShip.moveRandom(myShips);
 			shipToMove = mainShip;
-
 		} else if (destroyersHit.size() > 0 && pilotsHit.size() > 0 && numDestroyersLeft(myShips) == 1) {
-			destroyersHit.get(0).moveRandom(myShips, moveHoriz);
+			destroyersHit.get(0).moveRandom(myShips);
 			shipToMove = destroyersHit.get(0);
 			
 		} else if (destroyersHit.size() > 0 && pilotsHit.size() > 0) {
-			pilotsHit.get(0).moveRandom(myShips, moveHoriz);
+			pilotsHit.get(0).moveRandom(myShips);
 			shipToMove = pilotsHit.get(0);
 		} else if (destroyersHit.size() > 0 || pilotsHit.size() > 0) {
 			if (destroyersHit.size() > 0) {
-				destroyersHit.get(0).moveRandom(myShips, moveHoriz);
+				destroyersHit.get(0).moveRandom(myShips);
 				shipToMove = destroyersHit.get(0);
 			} else {
-				pilotsHit.get(0).moveRandom(myShips, moveHoriz);
+				pilotsHit.get(0).moveRandom(myShips);
 				shipToMove = pilotsHit.get(0);
 			}
-		} 
+		} else {
+			return null;
+		}
 		
-		if (moveHoriz) {
+		boolean isHoriz = shipToMove.orientation.equals("H") ? true : false;
+		
+		if (isHoriz) {
 			myResponse = new ShipAction(shipToMove.ID, shipToMove.xCoord, shipToMove.yCoord, Action.MoveH, 0);
 		} else {
 			myResponse = new ShipAction(shipToMove.ID, shipToMove.xCoord, shipToMove.yCoord, Action.MoveV, 0);
 		}
+		
+		System.out.println("*** ship hit and moved **\n" + shipToMove); // debug
 		
 		if (shipToMove != null) {
 			myShips.remove(shipToMove);
