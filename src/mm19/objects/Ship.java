@@ -19,6 +19,8 @@ public class Ship {
 	public int xCoord;
 	public int yCoord;
 	public String orientation;
+	
+	public int width;
 
 	/**
 	 * Constructor.
@@ -50,10 +52,13 @@ public class Ship {
 		String t = obj.getString("type");
 		if (t.equals("P")) {
 			type = ShipType.Pilot;
+			width = 2;
 		} else if (t.equals("D")) {
 			type = ShipType.Destroyer;
+			width = 4;
 		} else if (t.equals("M")) {
 			type = ShipType.Main;
+			width = 5;
 		}
 
 		xCoord = obj.getInt("xCoord");
@@ -176,6 +181,15 @@ public class Ship {
 		move(newX, newY);
 		orientation = newOrient;
 	
+	}
+	
+	/**
+	 * Check if this ship collides with another.
+	 * 
+	 * @param other
+	 */
+	public boolean collides(Ship other) {
+		return asRect().intersects(other.asRect());
 	}
 	
 	/**
