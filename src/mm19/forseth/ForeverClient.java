@@ -109,9 +109,9 @@ public class ForeverClient extends TestClient {
 
 		// TODO: Check for pings on us as well
 		if (lastResponse != null && canSpend(0)) { // if not on first turn; moving is high priority
-			List<HitReport> reports = Arrays.asList(sr.hitReport);
+			List<HitReport> hits = Arrays.asList(sr.hitReport);
 			List<PingReport> pings = Arrays.asList(sr.pingReport);
-			specialAction = moveShips(reports, fireableShips, pings); // cost of moving is subtracted within moveShips()		
+			specialAction = moveShips(hits, pings, fireableShips); // cost of moving is subtracted within moveShips()		
 
 		}
 		if (specialAction == null && canSpend(BURST_COST)) {
@@ -393,122 +393,72 @@ public class ForeverClient extends TestClient {
 	 * 
 	 * @param hitShips A priority list of ships to move. Highest priority is at the
 	 * top of the list.
+	 * @param allShips All the ships, to check for collisions in.
 	 * @return The ShipAction if a ship is moved, or null otherwise.
 	 */
-	private ShipAction moveShips(List<Ship> hitShips) {
+	private ShipAction moveShip(List<Ship> hitShips, List<Ship> allShips) {
 		Ship toMove = null;
 		for (Ship s : hitShips) {
 			switch (s.type) {
-			
+			case Main:
+				if (availableResources() >= MOVE_COST_MAIN) {
+					spend(MOVE_COST_MAIN);
+					toMove = s;
+					break;
+				}
+				break;
+				
+			case Pilot:
+				if (availableResources() >= MOVE_COST_PILOT) {
+					spend(MOVE_COST_PILOT);
+					toMove = s;
+					break;
+				}
+				break;
+				
+			case Destroyer:
+				if (availableResources() >= MOVE_COST_DESTROY) {
+					spend(MOVE_COST_DESTROY);
+					toMove = s;
+					break;
+				}
+				break;
 			}
 		}
-//		// flags
-//		ShipAction myResponse = null;
-//		Ship shipToMove = null;
-//		boolean mainHit = false;
-//
-//		List<Ship> destroyersHit = new ArrayList<Ship>();
-//		List<Ship> pilotsHit = new ArrayList<Ship>();
-//
-//		ArrayList<Ship> shipsHit = new ArrayList<Ship>();
-//		for (HitReport report : hitReports) {
-//			if (report.hit) {
-//				// figure out what was hit
-//				for (Ship ship : myShips) {
-//					if (ship.contains(new Point(report.xCoord, report.yCoord))) {
-//						//					if (report.xCoord == ship.xCoord && report.yCoord == ship.yCoord) {
-//						shipsHit.add(ship);
-//
-//						// set flags
-//						if (ship.type == ShipType.Main) {
-//							mainHit = true;
-//						} else if (ship.type == ShipType.Destroyer) {
-//							destroyersHit.add(ship);
-//						} else {
-//							pilotsHit.add(ship);
-//						}
-//
-//						break;
-//					}
-//				}
-//			}
-//		}
-//
-//		// decide what to move
-//		if (mainHit) {
-//			mainShip.moveRandom(myShips);
-//			shipToMove = mainShip;
-//
-//		} else if (destroyersHit.size() > 0 && pilotsHit.size() > 0 && numDestroyersLeft(myShips) == 1) {
-//			destroyersHit.get(0).moveRandom(myShips);
-//			shipToMove = destroyersHit.get(0);
-//
-//		} else if (destroyersHit.size() > 0 && pilotsHit.size() > 0) {
-//			pilotsHit.get(0).moveRandom(myShips);
-//			shipToMove = pilotsHit.get(0);
-//		} else if (destroyersHit.size() > 0 || pilotsHit.size() > 0) {
-//			if (destroyersHit.size() > 0) {
-//				destroyersHit.get(0).moveRandom(myShips);
-//				shipToMove = destroyersHit.get(0);
-//			} else {
-//				pilotsHit.get(0).moveRandom(myShips);
-//				shipToMove = pilotsHit.get(0);
-//			}
-//		} else {
-//
-//			// check ping situation
-//
-//			for (PingReport ping : pingReports) {
-//				if (ping.shipID == mainShip.ID) {
-//					shipToMove = mainShip;
-//					break;
-//				} else {
-//					// move any of the others
-//					for (Ship otherShip : myShips) {
-//						if (otherShip.ID == ping.shipID) {
-//							shipToMove = otherShip; // inefficient
-//						}
-//					}
-//				}
-//			}
-//
-//			return null;
-//		}
-//
-//		boolean isHoriz = shipToMove.orientation.equals("H") ? true : false;
-//
-//		if (isHoriz) {
-//			myResponse = new ShipAction(shipToMove.ID, shipToMove.xCoord, shipToMove.yCoord, Action.MoveH, 0);
-//		} else {
-//			myResponse = new ShipAction(shipToMove.ID, shipToMove.xCoord, shipToMove.yCoord, Action.MoveV, 0);
-//		}
-//
-//		// subtract cost of ship
-//		switch(shipToMove.type) {
-//		case Main:
-//			if (canSpend(MOVE_COST_MAIN)) {
-//				spend(MOVE_COST_MAIN);
-//			}
-//			break;
-//		case Destroyer:
-//			if (canSpend(MOVE_COST_DESTROY)) {
-//				spend(MOVE_COST_DESTROY);
-//			}
-//			break;
-//		case Pilot:
-//			if (canSpend(MOVE_COST_PILOT)) {
-//				spend(MOVE_COST_PILOT);
-//			}
-//			break;
-//		}
-//
-//
-//		if (shipToMove != null) {
-//			myShips.remove(shipToMove);
-//		}
-
-		return myResponse;
-
+		
+		if (toMove == null) {
+			return null;
+		}
+		
+		ShipAction movement = new ShipAction(toMove.ID);
+		boolean horz = Math.random() > 0.5;
+		movement.actionID = (horz) ? ShipAction.Action.MoveH : ShipAction.Action.MoveV;
+		
+		java.util.Random rng = new java.util.Random();
+		// keep going until we find a clear space:
+		while (true) {
+			int x, y;
+			if (horz) {
+				x = rng.nextInt(100 - (toMove.width - 1));
+				y = rng.nextInt(100);
+			} else {
+				y = rng.nextInt(100 - (toMove.width - 1));
+				x = rng.nextInt(100);
+			}
+			boolean collides = false;
+			for (Ship s : allShips) {
+				if (s.contains(new Point(x, y))) {
+					collides = true;
+					break;
+				}
+			}
+			movement.actionX = x;
+			movement.actionY = y;
+			if (!collides) {
+				break;
+			}
+		}
+		return movement;
 	}
 
 	public ShipAction fireBurst(Ship s){

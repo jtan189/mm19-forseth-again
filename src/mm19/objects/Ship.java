@@ -20,7 +20,7 @@ public class Ship {
 	public int yCoord;
 	public String orientation;
 	
-	private int width;
+	public int width;
 
 	/**
 	 * Constructor.
@@ -181,6 +181,15 @@ public class Ship {
 		move(newX, newY);
 		orientation = newOrient;
 	
+	}
+	
+	/**
+	 * Check if this ship collides with another.
+	 * 
+	 * @param other
+	 */
+	public boolean collides(Ship other) {
+		return asRect().intersects(other.asRect());
 	}
 	
 	/**
