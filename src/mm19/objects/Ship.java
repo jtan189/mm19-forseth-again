@@ -39,6 +39,36 @@ public class Ship {
 		orientation = obj.getString("orientation");
 	}
 	
+	public JSONObject toMainJSONObject() {
+		JSONObject obj = new JSONObject();
+		obj.put("xCoord", xCoord);
+		obj.put("yCoord", yCoord);
+		obj.put("orientation", orientation);
+		return obj;
+	}
+	
+	public JSONObject toJSONObject() {
+		JSONObject obj = toMainJSONObject();
+		switch (type) {
+		case Destroyer:
+			obj.put("type", "D");
+			break;
+			
+		case Pilot:
+			obj.put("type", "P");
+			break;
+			
+		case Main:
+			obj.put("type", "M");
+			break;
+			
+		default:
+			System.err.println("NO. YOU SUCK. BAH.");
+			break;
+		}
+		return obj;
+	}
+	
 	public void takeDamage(int damage) {
 		health -= damage;
 	}

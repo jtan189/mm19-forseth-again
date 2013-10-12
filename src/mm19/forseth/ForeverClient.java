@@ -40,7 +40,9 @@ public class ForeverClient extends TestClient {
 	
 	// all current ships
 	private Ship[] ships;
+	// TODO: optimize this later
 	private Map<Integer, ShipAction> indexedPlannedShots;
+	private ServerResponse lastResponse;
 
 	/**
 	 * The number of bullets to unload on enemies we've detected.
@@ -49,30 +51,34 @@ public class ForeverClient extends TestClient {
 
 	public ForeverClient() {
 		super("ForsethAgain");
-		placeShips();
 	}
 
 	@Override
 	public JSONObject setup() {
 		JSONObject obj = new JSONObject();
+		ArrayList<Ship> placedShips = placeShips();
 		obj.put("playerName", this.name);
-		JSONObject jsonMainShip
-		return null;
+		obj.put("mainShip", mainShip.toMainJSONObject());
+		Collection<JSONObject> jsonShips = new ArrayList<JSONObject>();
+		for (Ship s : placedShips) {
+			jsonShips.add(s.toJSONObject());
+		}
+		obj.put("ships", jsonShips);
+		return obj;
 	}
 
 	@Override
 	public void processResponse(ServerResponse sr) {
-		// TODO Auto-generated method stub
-		
+		lastResponse = sr;
 	}
 
 	@Override
 	public JSONObject prepareTurn(ServerResponse sr) {
 		JSONObject turnObj = new JSONObject();
 		token = sr.playerToken;
-		ships = sr.ships;
+		ships = lastResponse.ships;
+		List<HitReport> reports = Arrays.asList(lastResponse.hitReport);
 		List<Ship> fireableShips = Arrays.asList(ships);
-		List<HitReport> reports = Arrays.asList(sr.hitReport);
 		Collection<JSONObject> actions = new ArrayList<JSONObject>();
 		ShipAction specialAction = null;
 		// TODO: Check for pings on us as well
@@ -109,8 +115,7 @@ public class ForeverClient extends TestClient {
 
 	@Override
 	public void handleInterrupt(ServerResponse sr) {
-		// TODO Auto-generated method stub
-		
+		System.err.println("Your data is incorrect, and my worldview has been shattered. I must die now.");
 	}
 	
 	/**
@@ -185,7 +190,7 @@ public class ForeverClient extends TestClient {
 		ArrayList<Ship> list = new ArrayList<Ship>();
 		//(int i, int h, ShipType t, int x, int y, String o)
 		mainShip = new Ship(0, 60, ShipType.Main, 79, 80, "V");
-		list.add(mainShip);
+		// do NOT add mainship because we add it seperate from other ships during game start
 		list.add(new Ship(1, 40, ShipType.Destroyer, 3, 36, "H"));
 		list.add(new Ship(2, 40, ShipType.Destroyer, 7, 94, "V"));
 		list.add(new Ship(3, 40, ShipType.Destroyer, 14, 78, "H"));
