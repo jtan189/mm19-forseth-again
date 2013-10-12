@@ -336,10 +336,13 @@ public class ForeverClient extends TestClient {
 		Ship pilotPing = null;
 		Ship destHit = null;
 		Ship destPing = null;
-		boolean hitNearMain = false; // 
-		boolean pingNearMain = false; 
+		Ship mainInDanger = null;
 		for (Ship s : ships) {
-
+			// get area around main ship
+			Rectangle mainOutline = s.asRect();
+			Rectangle mainProximity = new Rectangle(mainOutline.x - DELTA_NEAR_MAIN, mainOutline.y - DELTA_NEAR_MAIN,
+					mainOutline.width + (2 * DELTA_NEAR_MAIN), mainOutline.height + (2 * DELTA_NEAR_MAIN));
+			
 			for (HitReport hr : hits) {
 				if (s.contains(new Point(hr.xCoord, hr.yCoord))) {
 					//JOptionPane.showConfirmDialog(null, "Collision at ("+s.xCoord+", "+s.yCoord+") on turn " + turn);
@@ -362,16 +365,8 @@ public class ForeverClient extends TestClient {
 						}
 						break;
 					}
-				} else if (s.type == ShipType.Main){
-					
-					// get area around main ship
-					Rectangle mainOutline = s.asRect();
-					Rectangle mainProximity = new Rectangle(mainOutline.x - DELTA_NEAR_MAIN, mainOutline.y - DELTA_NEAR_MAIN,
-							mainOutline.width + (2 * DELTA_NEAR_MAIN), mainOutline.height + (2 * DELTA_NEAR_MAIN));
-					
-					// determine if hit occurred near main
-					hitNearMain = mainProximity.contains(new Point(hr.xCoord, hr.yCoord));
-					
+				} else if (s.type == Ship.ShipType.Main && mainProximity.contains(new Point(hr.xCoord, hr.yCoord))) {
+					mainInDanger = s;
 				}
 			}
 			for (PingReport pr : pings) {
@@ -396,11 +391,6 @@ public class ForeverClient extends TestClient {
 						break;
 					}
 				}
-				
-				// determine if ping occurred near main
-				if (s.type == ShipType.Main && pr.distance < DELTA_NEAR_MAIN){
-					pingNearMain = true;
-				}
 			}
 			if (mainHit != null) {
 				allHits.add(mainHit);
@@ -419,8 +409,8 @@ public class ForeverClient extends TestClient {
 			}
 			// if main has not been hit, but there have been near-hits or near-pings, add it to the move list
 			// (with low priority, i.e. if others were hit they take priority)
-			if (mainHit == null && (hitNearMain || pingNearMain)) {
-				allHits.add(mainShip);
+			if (mainInDanger != mainHit && mainInDanger != mainPing && mainInDanger != null) {
+				allHits.add(mainInDanger);
 			}
 		}
 		return allHits;
