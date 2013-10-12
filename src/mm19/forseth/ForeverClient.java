@@ -178,40 +178,22 @@ public class ForeverClient extends TestClient {
 	 * @param fireableShips The ships that may still fire at the enemy.
 	 */
 	private void addDiagonalShots(List<ShipAction> plannedShots, List<Ship> fireableShips) {
-		while (true) {
-			if (fireableShips.isEmpty() || !canSpend(50)) {
-				return;
-			} else {
-				Ship toFire = fireableShips.remove(0);
-				ShipAction sa = new ShipAction(toFire.ID);
-				sa.actionID = ShipAction.Action.Fire;
-				sa.actionX = fireX;
-				sa.actionY = fireY;
-				plannedShots.add(sa);
-				spend(50);
-				fireX += 5;
-				if (fireX > 99) {
-					fireX = 0;
-				}
-			}
-		}
-		/*while (initialFireX < 100 && initialFireY < 100) {
+		while (initialFireX < 100 && initialFireY < 100) {
 			while (fireX < 100 && fireY < 100) {
-				
-				if (fireableShips.isEmpty()) {
+				if (fireableShips.isEmpty() || !canSpend(50)) {
 					return;
+				} else {
+					// fire:
+					Ship toFire = fireableShips.remove(0);
+					ShipAction sa = new ShipAction(toFire.ID);
+					sa.actionID = ShipAction.Action.Fire;
+					sa.actionX = fireX;
+					sa.actionY = fireY;
+					plannedShots.add(sa);
+					spend(50);
+					fireY++;
+					fireX++;
 				}
-				
-				// fire:
-				Ship toFire = fireableShips.remove(0);
-				ShipAction sa = new ShipAction(toFire.ID);
-				sa.actionID = ShipAction.Action.Fire;
-				sa.actionX = fireX;
-				sa.actionY = fireY;
-				plannedShots.add(sa);
-				
-				fireY++;
-				fireX++;
 			}
 			if (initialFireX < 100) {
 				initialFireX += 6;
@@ -222,7 +204,7 @@ public class ForeverClient extends TestClient {
 				initialFireY += 6;
 				fireY = initialFireY;
 			}
-		}*/
+		}
 	}
 	
 	/**
