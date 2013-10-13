@@ -1,6 +1,5 @@
 package mm19.runner;
 
-import mm19.forseth.ForeverClient;
 import mm19.forseth.ForeverClient2;
 import mm19.testclient.TestClient;
 import mm19.testclient.TestClientException;
@@ -8,7 +7,7 @@ import mm19.testclient.TestClientException;
 public class TestClientRunner2 {
 
     public static void main(String args[]) {
-        String name = "Forseth Forever 2";
+        String name = "Forseth NEVER";
         if(args.length >= 1) {
             name = args[0];
         }

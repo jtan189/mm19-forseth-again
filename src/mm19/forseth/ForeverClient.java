@@ -3,37 +3,23 @@ package mm19.forseth;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.ArrayList;
-
-import org.json.JSONObject;
-
-import mm19.objects.PingReport;
-import mm19.objects.Ship;
-import mm19.objects.Ship.ShipType;
-import mm19.objects.HitReport;
-import mm19.objects.Ship;
-import mm19.objects.Ship.ShipType;
-import mm19.objects.ShipAction.Action;
-
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.JOptionPane;
-
 import mm19.objects.ActionResult;
-
-import javax.swing.JPanel;
-
-import mm19.objects.ActionResult;
+import mm19.objects.HitReport;
+import mm19.objects.PingReport;
 import mm19.objects.Ship;
+import mm19.objects.Ship.ShipType;
 import mm19.objects.ShipAction;
 import mm19.objects.ShotResult;
 import mm19.response.ServerResponse;
 import mm19.testclient.TestClient;
+
+import org.json.JSONObject;
 
 public class ForeverClient extends TestClient {
 
@@ -138,12 +124,12 @@ public class ForeverClient extends TestClient {
 		if (!fireableShips.isEmpty()) {
 			addDiagonalShots(plannedShots, fireableShips);
 		}
-		
-//		// testing
-//		ShipAction specialAction = new ShipAction(mainShip.ID, mainShip.xCoord + 1, mainShip.yCoord + 1,Action.MoveV, -1);
-//		mainShip.move(mainShip.xCoord + 1, mainShip.yCoord + 1);
-//		List<ShipAction> plannedShots = new ArrayList<ShipAction>();
-		
+
+		//		// testing
+		//		ShipAction specialAction = new ShipAction(mainShip.ID, mainShip.xCoord + 1, mainShip.yCoord + 1,Action.MoveV, -1);
+		//		mainShip.move(mainShip.xCoord + 1, mainShip.yCoord + 1);
+		//		List<ShipAction> plannedShots = new ArrayList<ShipAction>();
+
 		return translateToJSON(plannedShots, specialAction);
 	}
 
@@ -205,46 +191,43 @@ public class ForeverClient extends TestClient {
 	 * @param fireableShips The ships that may still fire at the enemy.
 	 */
 	private void addDiagonalShots(List<ShipAction> plannedShots, List<Ship> fireableShips) {
-		
-//
-//		while(true){
-			initialFireX += loopsCompleted;
-			while (initialFireX < 100 || initialFireY < 100) {
-				while (fireX < 100 && fireY < 100) {
-					if (fireableShips.isEmpty() || !canSpend(FIRE_COST)) {
-						return;
-					} else {
-						// fire:
-						Ship toFire = fireableShips.remove(0);
-						ShipAction sa = new ShipAction(toFire.ID);
-						sa.actionID = ShipAction.Action.Fire;
-						sa.actionX = fireX;
-						sa.actionY = fireY;
-						plannedShots.add(sa);
-						spend(FIRE_COST);
-						fireY++;
-						fireX++;
-					}
-				}
-				if (initialFireX < 100) {
-					initialFireX += 5;
-					fireX = initialFireX;
-					fireY = initialFireY;
-					if (initialFireX > 100){
-						initialFireY += loopsCompleted;
-					}
+		initialFireX += loopsCompleted;
+		while (initialFireX < 100 || initialFireY < 100) {
+			while (fireX < 100 && fireY < 100) {
+				if (fireableShips.isEmpty() || !canSpend(FIRE_COST)) {
+					return;
 				} else {
-					fireX = 0;
-					initialFireY += 5;
-					fireY = initialFireY;
-					if (initialFireY > 100){
-						loopsCompleted++;
-						initialFireX = 0;
-						initialFireY = 0;
-					}
+					// fire:
+					Ship toFire = fireableShips.remove(0);
+					ShipAction sa = new ShipAction(toFire.ID);
+					sa.actionID = ShipAction.Action.Fire;
+					sa.actionX = fireX;
+					sa.actionY = fireY;
+					plannedShots.add(sa);
+					spend(FIRE_COST);
+					fireY++;
+					fireX++;
 				}
 			}
-//		}
+			if (initialFireX < 100) { // < 99
+				initialFireX += 5;
+				fireX = initialFireX;
+				fireY = initialFireY;
+				if (initialFireX >= 100){ // changed
+					initialFireY += loopsCompleted;
+				}
+			} else {
+				fireX = 0;
+				initialFireY += 5;
+				fireY = initialFireY;
+				if (initialFireY >= 100){ // changed
+					loopsCompleted++;
+					initialFireX = 0;
+					initialFireY = 0;
+				}
+			}
+		}
+		
 	}
 
 	/**
@@ -339,7 +322,7 @@ public class ForeverClient extends TestClient {
 			Rectangle mainOutline = s.asRect();
 			Rectangle mainProximity = new Rectangle(mainOutline.x - DELTA_NEAR_MAIN, mainOutline.y - DELTA_NEAR_MAIN,
 					mainOutline.width + (2 * DELTA_NEAR_MAIN), mainOutline.height + (2 * DELTA_NEAR_MAIN));
-			
+
 			for (HitReport hr : hits) {
 				System.out.println(hr);
 				if (s.contains(new Point(hr.xCoord, hr.yCoord))) {
@@ -351,14 +334,14 @@ public class ForeverClient extends TestClient {
 							System.out.println("A main has been hit!");
 						}
 						break;
-						
+
 					case Destroyer:
 						if (destHit == null || destHit.health > s.health) {
 							destHit = s;
 							System.out.println("A destroyer has been hit!");
 						}
 						break;
-						
+
 					case Pilot:
 						if (pilotHit == null || pilotHit.health > s.health) {
 							pilotHit = s;
@@ -380,14 +363,14 @@ public class ForeverClient extends TestClient {
 							System.out.println("A main has been pinged!");
 						}
 						break;
-						
+
 					case Destroyer:
 						if (destPing == null || destPing.health > s.health) {
 							destPing = s;
 							System.out.println("A destroyer has been pinged!");
 						}
 						break;
-						
+
 					case Pilot:
 						if (pilotPing == null || pilotPing.health > s.health) {
 							pilotPing = s;
@@ -448,7 +431,7 @@ public class ForeverClient extends TestClient {
 					System.out.println("We'll move the main.");
 				}
 				break;
-				
+
 			case Pilot:
 				if (availableResources() >= MOVE_COST_PILOT) {
 					spend(MOVE_COST_PILOT);
@@ -457,7 +440,7 @@ public class ForeverClient extends TestClient {
 					System.out.println("We'll move the pilot.");
 				}
 				break;
-				
+
 			case Destroyer:
 				if (availableResources() >= MOVE_COST_DESTROY) {
 					spend(MOVE_COST_DESTROY);
@@ -471,17 +454,17 @@ public class ForeverClient extends TestClient {
 				break;
 			}
 		}
-		
+
 		if (toMove == null) {
 			return null;
 		}
-		
+
 		fireableShips.remove(toMove);
-		
+
 		ShipAction movement = new ShipAction(toMove.ID);
 		boolean horz = Math.random() > 0.5;
 		movement.actionID = (horz) ? ShipAction.Action.MoveH : ShipAction.Action.MoveV;
-		
+
 		java.util.Random rng = new java.util.Random();
 		// keep going until we find a clear space:
 		while (true) {
@@ -542,7 +525,7 @@ public class ForeverClient extends TestClient {
 							indexedPlannedShots.put(sa.shipID, sa);
 							fireActions.add(sa);
 							System.out.println("..Added one burst attack..:" + i);
-							
+
 							// subtract cost
 							spend(FIRE_COST);
 						}
