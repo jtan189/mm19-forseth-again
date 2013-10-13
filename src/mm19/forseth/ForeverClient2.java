@@ -58,7 +58,7 @@ public class ForeverClient2 extends TestClient {
 	/**
 	 * The number of bullets to unload on enemies we've detected.
 	 */
-	private static final int UNLOAD_BULLET_COUNT = 5;
+	private static final int UNLOAD_BULLET_COUNT = 3;
 
 	public ForeverClient2(String name) {
 		super(name);
@@ -122,9 +122,9 @@ public class ForeverClient2 extends TestClient {
 		}
 
 
-		//		if (!fireableShips.isEmpty()) {
-		//			addDiagonalShots(plannedShots, fireableShips);
-		//		}
+				if (!fireableShips.isEmpty()) {
+					addDiagonalShots(plannedShots, fireableShips);
+				}
 
 		//		// testing
 		//		ShipAction specialAction = new ShipAction(mainShip.ID, mainShip.xCoord + 1, mainShip.yCoord + 1,Action.MoveV, -1);

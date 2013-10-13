@@ -58,7 +58,7 @@ public class ForeverClient extends TestClient {
 	/**
 	 * The number of bullets to unload on enemies we've detected.
 	 */
-	private static final int UNLOAD_BULLET_COUNT = 3;
+	private static final int UNLOAD_BULLET_COUNT = 5;
 
 	public ForeverClient(String name) {
 		super(name);
