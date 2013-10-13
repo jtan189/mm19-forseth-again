@@ -3,37 +3,23 @@ package mm19.forseth;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.ArrayList;
-
-import org.json.JSONObject;
-
-import mm19.objects.PingReport;
-import mm19.objects.Ship;
-import mm19.objects.Ship.ShipType;
-import mm19.objects.HitReport;
-import mm19.objects.Ship;
-import mm19.objects.Ship.ShipType;
-import mm19.objects.ShipAction.Action;
-
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.JOptionPane;
-
 import mm19.objects.ActionResult;
-
-import javax.swing.JPanel;
-
-import mm19.objects.ActionResult;
+import mm19.objects.HitReport;
+import mm19.objects.PingReport;
 import mm19.objects.Ship;
+import mm19.objects.Ship.ShipType;
 import mm19.objects.ShipAction;
 import mm19.objects.ShotResult;
 import mm19.response.ServerResponse;
 import mm19.testclient.TestClient;
+
+import org.json.JSONObject;
 
 public class ForeverClient2 extends TestClient {
 
@@ -136,9 +122,9 @@ public class ForeverClient2 extends TestClient {
 		}
 
 
-		if (!fireableShips.isEmpty()) {
-			addDiagonalShots(plannedShots, fireableShips);
-		}
+//		if (!fireableShips.isEmpty()) {
+//			addDiagonalShots(plannedShots, fireableShips);
+//		}
 		
 //		// testing
 //		ShipAction specialAction = new ShipAction(mainShip.ID, mainShip.xCoord + 1, mainShip.yCoord + 1,Action.MoveV, -1);
