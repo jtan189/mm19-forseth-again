@@ -1,6 +1,7 @@
 # emacs files
 *~
 
+bin
 
 # meld stuff
 *.orig
