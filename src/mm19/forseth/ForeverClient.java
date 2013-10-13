@@ -2,9 +2,11 @@ package mm19.forseth;
 
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -52,9 +54,13 @@ public class ForeverClient extends TestClient {
 
 	private int usedResources = 0;
 	
-	private LinkedHashSet<Point> lastPoints = null;
+	private Deque<Point> lowPoints = new ArrayDeque<Point>();
 	
-	private LinkedHashSet<Point> predictedPoints = null;
+	private Deque<Point> highPoints = new ArrayDeque<Point>();
+	
+	private Point prevPredLow = null;
+	
+	private Point prevPredHigh = null;
 	
 	private int predictionsRight = 0;
 	
@@ -67,6 +73,9 @@ public class ForeverClient extends TestClient {
 	// TODO: optimize this later
 	private Map<Integer, ShipAction> indexedPlannedShots;
 	private ServerResponse lastResponse;
+	private Point predLow = null;
+	private Point predHigh = null;
+	private int numPreds = 0;
 
 	/**
 	 * The number of bullets to unload on enemies we've detected.
@@ -119,9 +128,11 @@ public class ForeverClient extends TestClient {
 		}
 		if (specialAction == null && canSpend(BURST_COST)) {
 			Ship burster = selectBurstingShip(fireableShips);
-			fireableShips.remove(burster);
-			specialAction = fireBurst(burster);
-			spend(BURST_COST);
+			if (burster != null) {
+				fireableShips.remove(burster);
+				specialAction = fireBurst(burster);
+				spend(BURST_COST);
+			}
 		}
 
 		indexedPlannedShots = new HashMap<Integer, ShipAction>();
@@ -148,28 +159,53 @@ public class ForeverClient extends TestClient {
 	}
 
 	private void predict(List<HitReport> hits) {
-		LinkedHashSet<Point> points = new LinkedHashSet<Point>();
+		int min = 201;
+		Point minP = null;
+		int max = 0;
+		Point maxP = null;
 		for (HitReport hr : hits) {
-			points.add(new Point(hr.xCoord, hr.yCoord));
-		}
-		if (lastPoints == null) {
-			lastPoints = points;
-		} else {
-			if (predictedPoints != null && predictionChances < 50) {
-				predictionChances++;
-				if (predictedPoints.equals(points)) {
-					predictionsRight++;
-				}
-				if (predictionChances == 50) {
-					accuracy = predictionsRight / predictionChances;
-				}
+			Point p = new Point(hr.xCoord, hr.yCoord);
+			
+			int norm = p.x + p.y;
+			
+			if (norm < min) {
+				min = norm;
+				minP = p;
 			}
-			int amt = Math.min(points.size(), lastPoints.size());
-			for (int i = 0; i < amt; i++) {
-				
+			if (norm > max) {
+				max = norm;
+				maxP = p;
 			}
 		}
-		
+		if (hits.size() > 0) {
+			lowPoints.add(minP);
+			highPoints.add(maxP);
+			if (lowPoints.size() == 3) { // implies high is 3
+				if (predHigh != null) {
+					prevPredHigh = predHigh;
+				}
+				if (predLow != null) {
+					prevPredLow = predLow;
+				}
+				Point p1 = lowPoints.remove();
+				Point p2 = lowPoints.remove();
+				Point p3 = lowPoints.remove();
+				lowPoints.add(p2);
+				lowPoints.add(p3);
+				predLow = new Point(0, 0);
+				predLow.x = (p1.x - p2.x) + ((p1.x - p2.x) - (p2.x - p3.x)); 
+				predLow.y = (p1.y - p2.y) + ((p1.y - p2.y) - (p2.y - p3.y));
+				Point ph1 = highPoints.remove();
+				Point ph2 = highPoints.remove();
+				Point ph3 = highPoints.remove();
+				highPoints.add(ph2);
+				highPoints.add(ph3);
+				predHigh = new Point(0, 0);
+				predHigh.x = (ph1.x - ph2.x) + ((ph1.x - ph2.x) - (ph2.x - ph3.x)); 
+				predHigh.y = (ph1.y - ph2.y) + ((ph1.y - ph2.y) - (ph2.y - ph3.y));
+				numPreds ++;
+			}
+		}
 	}
 
 	/**
@@ -356,6 +392,7 @@ public class ForeverClient extends TestClient {
 		Ship destHit = null;
 		Ship destPing = null;
 		Ship mainInDanger = null;
+		Ship predictDanger = null;
 		for (Ship s : ships) {
 			// get area around main ship
 			Rectangle mainOutline = s.asRect();
@@ -419,33 +456,66 @@ public class ForeverClient extends TestClient {
 					}
 				}
 			}
+			Point shipLoc = new Point(s.xCoord, s.yCoord);
+			if ((shipLoc.equals(predLow) || shipLoc.equals(predHigh)) && predIsReliable()) {
+				predictDanger = s;
+			}
 		}
+		boolean added = false;
 		if (mainHit != null) {
 			allHits.add(mainHit);
+			added = true;
 		}
 		if (mainPing != null && mainPing != mainHit) {
 			allHits.add(mainHit);
+			added = true;
 		}
 		// no pilot ping 
 		if (pilotHit != null) {
 			allHits.add(pilotHit);
+			added = true;
 		}
 		if (pilotPing != null && pilotPing != pilotHit) {
 			allHits.add(pilotPing);
+			added = true;
 		}
 		if (destHit != null) {
 			allHits.add(destHit);
+			added = true;
 		}
 		if (destPing != null && destPing != destHit) {
 			allHits.add(destPing);
+			added = true;
 		}
 		// if main has not been hit, but there have been near-hits or near-pings, add it to the move list
 		// (with low priority, i.e. if others were hit they take priority)
 		if (mainInDanger != mainHit && mainInDanger != mainPing && mainInDanger != null) {
 			allHits.add(mainInDanger);
+			added = true;
+		}
+		if (predictDanger != null && !added) {
+			allHits.add(predictDanger);
 		}
 		System.out.println("Finished checking hits");
 		return allHits;
+	}
+
+	private boolean predIsReliable() {
+		Point tErr = new Point();
+		tErr.x = Math.abs(lowPoints.peekLast().x - prevPredLow.x);
+		tErr.y = Math.abs(lowPoints.peekLast().y - prevPredLow.y);
+		double avgX, avgY;
+		avgX = tErr.x / (double) numPreds;
+		avgY = tErr.y / (double) numPreds;
+		double totalErrorLow = avgX + avgY;
+		Point tErr2 = new Point();
+		tErr2.x = Math.abs(highPoints.peekLast().x - prevPredHigh.x);
+		tErr2.y = Math.abs(highPoints.peekLast().y - prevPredHigh.y);
+		double avgX2, avgY2;
+		avgX2 = tErr2.x / (double) numPreds;
+		avgY2 = tErr2.y / (double) numPreds;
+		double totalErrorLow2 = avgX2 + avgY2;
+		return !(totalErrorLow > 10 || totalErrorLow2 > 10);
 	}
 
 	/**
