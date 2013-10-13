@@ -7,7 +7,7 @@ import mm19.testclient.TestClientException;
 public class TestClientRunner2 {
 
     public static void main(String args[]) {
-        String name = "Forseth NEVER";
+        String name = "Forseth Never";
         if(args.length >= 1) {
             name = args[0];
         }

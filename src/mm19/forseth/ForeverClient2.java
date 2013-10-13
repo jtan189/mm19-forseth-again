@@ -520,7 +520,6 @@ public class ForeverClient2 extends TestClient {
 							sa.actionY = hr.yCoord;
 							indexedPlannedShots.put(sa.shipID, sa);
 							fireActions.add(sa);
-							System.out.println("..Added one burst attack..:" + i);
 
 							// subtract cost
 							spend(FIRE_COST);

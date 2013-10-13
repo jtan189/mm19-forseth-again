@@ -6,8 +6,6 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-import javax.swing.JOptionPane;
-
 import mm19.response.ServerResponse;
 import mm19.response.ServerResponseException;
 import mm19.testclient.TestClient;
