@@ -83,7 +83,7 @@ public class ForeverClient extends TestClient {
 	private static final int UNLOAD_BULLET_COUNT = 3;
 
 	public ForeverClient(String name) {
-		super("Forseth Again!");
+		super(name);
 	}
 
 	@Override
