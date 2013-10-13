@@ -6,8 +6,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import mm19.objects.ActionResult;
 import mm19.objects.HitReport;
@@ -48,6 +51,16 @@ public class ForeverClient extends TestClient {
 	private int resources = 0;
 
 	private int usedResources = 0;
+	
+	private LinkedHashSet<Point> lastPoints = null;
+	
+	private LinkedHashSet<Point> predictedPoints = null;
+	
+	private int predictionsRight = 0;
+	
+	private int predictionChances = 0;
+	
+	private double accuracy = 0.0;
 
 	// all current ships
 	private Ship[] ships;
@@ -61,7 +74,7 @@ public class ForeverClient extends TestClient {
 	private static final int UNLOAD_BULLET_COUNT = 3;
 
 	public ForeverClient(String name) {
-		super(name);
+		super("Forseth Again!");
 	}
 
 	@Override
@@ -99,6 +112,7 @@ public class ForeverClient extends TestClient {
 		if (lastResponse != null) { // spend check is in moveShip
 			List<HitReport> hits = Arrays.asList(sr.hitReport);
 			List<PingReport> pings = Arrays.asList(sr.pingReport);
+			predict(hits);
 			List<Ship> potentialHits = detectShipHits(hits, pings, fireableShips);
 			specialAction = moveShip(potentialHits, fireableShips);
 			// cost of moving is subtracted within moveShips()
@@ -131,6 +145,31 @@ public class ForeverClient extends TestClient {
 		//		List<ShipAction> plannedShots = new ArrayList<ShipAction>();
 
 		return translateToJSON(plannedShots, specialAction);
+	}
+
+	private void predict(List<HitReport> hits) {
+		LinkedHashSet<Point> points = new LinkedHashSet<Point>();
+		for (HitReport hr : hits) {
+			points.add(new Point(hr.xCoord, hr.yCoord));
+		}
+		if (lastPoints == null) {
+			lastPoints = points;
+		} else {
+			if (predictedPoints != null && predictionChances < 50) {
+				predictionChances++;
+				if (predictedPoints.equals(points)) {
+					predictionsRight++;
+				}
+				if (predictionChances == 50) {
+					accuracy = predictionsRight / predictionChances;
+				}
+			}
+			int amt = Math.min(points.size(), lastPoints.size());
+			for (int i = 0; i < amt; i++) {
+				
+			}
+		}
+		
 	}
 
 	/**
