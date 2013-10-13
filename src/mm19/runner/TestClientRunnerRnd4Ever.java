@@ -1,17 +1,17 @@
 package mm19.runner;
 
-import mm19.forseth.ForeverClient2;
+import mm19.testclient.RandomForeverClient;
 import mm19.testclient.TestClient;
 import mm19.testclient.TestClientException;
 
-public class TestClientRunner2 {
+public class TestClientRunnerRnd4Ever {
 
     public static void main(String args[]) {
-        String name = "Forseth Never";
+        String name = "Forseth Again";
         if(args.length >= 1) {
             name = args[0];
         }
-        TestClient tc1 = new ForeverClient2(name);
+        TestClient tc1 = new RandomForeverClient(name);
 
         try {
             tc1.connect();

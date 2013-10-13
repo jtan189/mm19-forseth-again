@@ -136,7 +136,7 @@ public class Ship {
 	 */
 	public Rectangle asRect() {
 		
-		if (orientation.equals("H")) {
+		if (orientation.equals("V")) {
 			return new Rectangle(xCoord, yCoord, 1, getLength());
 		} else {
 			return new Rectangle(xCoord, yCoord, getLength(), 1);
@@ -150,7 +150,7 @@ public class Ship {
 	 */
 	public Rectangle asRect(int x, int y, String orient) {
 		
-		if (orient.equals("H")) {
+		if (orient.equals("V")) {
 			return new Rectangle(x, y, 1, getLength());
 		} else {
 			return new Rectangle(x, y, getLength(), 1);

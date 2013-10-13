@@ -1,7 +1,6 @@
-package mm19.forseth;
+package mm19.testclient;
 
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -17,11 +16,10 @@ import mm19.objects.Ship.ShipType;
 import mm19.objects.ShipAction;
 import mm19.objects.ShotResult;
 import mm19.response.ServerResponse;
-import mm19.testclient.TestClient;
 
 import org.json.JSONObject;
 
-public class ForeverClient2 extends TestClient {
+public class RandomForeverClient extends TestClient {
 
 	private String token;
 	public static final int MAP_WIDTH = 100;
@@ -34,16 +32,9 @@ public class ForeverClient2 extends TestClient {
 	public static final int FIRE_COST = 50;
 	public static final int BURST_COST = 250;
 
-	public static final int DELTA_NEAR_MAIN = 5;
 
 
 	private Ship mainShip;
-
-	private int fireX = 0;
-	private int fireY = 0;
-	private int initialFireX = 0;
-	private int initialFireY = 0;
-	private int loopsCompleted = 0;
 
 	private int resources = 0;
 
@@ -60,7 +51,7 @@ public class ForeverClient2 extends TestClient {
 	 */
 	private static final int UNLOAD_BULLET_COUNT = 3;
 
-	public ForeverClient2(String name) {
+	public RandomForeverClient(String name) {
 		super(name);
 	}
 
@@ -122,15 +113,15 @@ public class ForeverClient2 extends TestClient {
 		}
 
 
-				if (!fireableShips.isEmpty()) {
-					addDiagonalShots(plannedShots, fireableShips);
-				}
-
-		//		// testing
-		//		ShipAction specialAction = new ShipAction(mainShip.ID, mainShip.xCoord + 1, mainShip.yCoord + 1,Action.MoveV, -1);
-		//		mainShip.move(mainShip.xCoord + 1, mainShip.yCoord + 1);
-		//		List<ShipAction> plannedShots = new ArrayList<ShipAction>();
-
+		if (!fireableShips.isEmpty()) {
+			addDiagonalShots(plannedShots, fireableShips);
+		}
+		
+//		// testing
+//		ShipAction specialAction = new ShipAction(mainShip.ID, mainShip.xCoord + 1, mainShip.yCoord + 1,Action.MoveV, -1);
+//		mainShip.move(mainShip.xCoord + 1, mainShip.yCoord + 1);
+//		List<ShipAction> plannedShots = new ArrayList<ShipAction>();
+		
 		return translateToJSON(plannedShots, specialAction);
 	}
 
@@ -192,44 +183,18 @@ public class ForeverClient2 extends TestClient {
 	 * @param fireableShips The ships that may still fire at the enemy.
 	 */
 	private void addDiagonalShots(List<ShipAction> plannedShots, List<Ship> fireableShips) {
-
-
-
-		initialFireX += loopsCompleted;
-		while (initialFireX < 100 || initialFireY < 100) {
-			while (fireX < 100 && fireY < 100) {
-				if (fireableShips.isEmpty() || !canSpend(FIRE_COST)) {
-					return;
-				} else {
-					// fire:
-					Ship toFire = fireableShips.remove(0);
-					ShipAction sa = new ShipAction(toFire.ID);
-					sa.actionID = ShipAction.Action.Fire;
-					sa.actionX = fireX;
-					sa.actionY = fireY;
-					plannedShots.add(sa);
-					spend(FIRE_COST);
-					fireY++;
-					fireX++;
-				}
-			}
-			if (initialFireX < 100) {
-				initialFireX += 5;
-				fireX = initialFireX;
-				fireY = initialFireY;
-				if (initialFireX >= 100){
-					initialFireY += loopsCompleted;
-				}
-			} else {
-				fireX = 0;
-				initialFireY += 5;
-				fireY = initialFireY;
-				if (initialFireY >= 100){
-					loopsCompleted++;
-					initialFireX = 0;
-					initialFireY = 0;
-				}
-			}
+		
+		if (fireableShips.isEmpty() || !canSpend(FIRE_COST)) {
+			return;
+		} else {
+			// fire:
+			Ship toFire = fireableShips.remove(0);
+			ShipAction sa = new ShipAction(toFire.ID);
+			sa.actionID = ShipAction.Action.Fire;
+			sa.actionX = (int) (Math.random() * 99);
+			sa.actionY = (int) (Math.random() * 99);
+			plannedShots.add(sa);
+			spend(FIRE_COST);
 		}
 
 	}
@@ -303,9 +268,9 @@ public class ForeverClient2 extends TestClient {
 		}
 		return count;
 	}
-
+	
 	int turn = 0;
-
+	
 	/**
 	 * Detects which ships were hit.
 	 * 
@@ -322,42 +287,28 @@ public class ForeverClient2 extends TestClient {
 		Ship pilotPing = null;
 		Ship destHit = null;
 		Ship destPing = null;
-		boolean hitNearMain = false; // 
-		boolean pingNearMain = false; 
 		for (Ship s : ships) {
-
 			for (HitReport hr : hits) {
 				if (s.contains(new Point(hr.xCoord, hr.yCoord))) {
-					//JOptionPane.showConfirmDialog(null, "Collision at ("+s.xCoord+", "+s.yCoord+") on turn " + turn);
 					switch (s.type) {
 					case Main:
 						if (mainHit == null || mainHit.health > s.health) {
 							mainHit = s;
 						}
 						break;
-
+						
 					case Destroyer:
 						if (destHit == null || destHit.health > s.health) {
 							destHit = s;
 						}
 						break;
-
+						
 					case Pilot:
 						if (pilotHit == null || pilotHit.health > s.health) {
 							pilotHit = s;
 						}
 						break;
 					}
-				} else if (s.type == ShipType.Main){
-
-					// get area around main ship
-					Rectangle mainOutline = s.asRect();
-					Rectangle mainProximity = new Rectangle(mainOutline.x - DELTA_NEAR_MAIN, mainOutline.y - DELTA_NEAR_MAIN,
-							mainOutline.width + (2 * DELTA_NEAR_MAIN), mainOutline.height + (2 * DELTA_NEAR_MAIN));
-
-					// determine if hit occurred near main
-					hitNearMain = mainProximity.contains(new Point(hr.xCoord, hr.yCoord));
-
 				}
 			}
 			for (PingReport pr : pings) {
@@ -368,24 +319,19 @@ public class ForeverClient2 extends TestClient {
 							mainPing = s;
 						}
 						break;
-
+						
 					case Destroyer:
 						if (destPing == null || destPing.health > s.health) {
 							destPing = s;
 						}
 						break;
-
+						
 					case Pilot:
 						if (pilotPing == null || pilotPing.health > s.health) {
 							pilotPing = s;
 						}
 						break;
 					}
-				}
-
-				// determine if ping occurred near main
-				if (s.type == ShipType.Main && pr.distance < DELTA_NEAR_MAIN){
-					pingNearMain = true;
 				}
 			}
 			if (mainHit != null) {
@@ -402,11 +348,6 @@ public class ForeverClient2 extends TestClient {
 			}
 			if (destPing != null && destPing != destHit) {
 				allHits.add(destPing);
-			}
-			// if main has not been hit, but there have been near-hits or near-pings, add it to the move list
-			// (with low priority, i.e. if others were hit they take priority)
-			if (mainHit == null && (hitNearMain || pingNearMain)) {
-				allHits.add(mainShip);
 			}
 		}
 		return allHits;
@@ -432,7 +373,7 @@ public class ForeverClient2 extends TestClient {
 					break;
 				}
 				break;
-
+				
 			case Pilot:
 				if (availableResources() >= MOVE_COST_PILOT) {
 					spend(MOVE_COST_PILOT);
@@ -440,7 +381,7 @@ public class ForeverClient2 extends TestClient {
 					break;
 				}
 				break;
-
+				
 			case Destroyer:
 				if (availableResources() >= MOVE_COST_DESTROY) {
 					spend(MOVE_COST_DESTROY);
@@ -450,17 +391,17 @@ public class ForeverClient2 extends TestClient {
 				break;
 			}
 		}
-
+		
 		if (toMove == null) {
 			return null;
 		}
-
+		
 		fireableShips.remove(toMove);
-
+		
 		ShipAction movement = new ShipAction(toMove.ID);
 		boolean horz = Math.random() > 0.5;
 		movement.actionID = (horz) ? ShipAction.Action.MoveH : ShipAction.Action.MoveV;
-
+		
 		java.util.Random rng = new java.util.Random();
 		// keep going until we find a clear space:
 		while (true) {
@@ -520,7 +461,7 @@ public class ForeverClient2 extends TestClient {
 							sa.actionY = hr.yCoord;
 							indexedPlannedShots.put(sa.shipID, sa);
 							fireActions.add(sa);
-
+							
 							// subtract cost
 							spend(FIRE_COST);
 						}

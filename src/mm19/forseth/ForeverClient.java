@@ -80,7 +80,7 @@ public class ForeverClient extends TestClient {
 	/**
 	 * The number of bullets to unload on enemies we've detected.
 	 */
-	private static final int UNLOAD_BULLET_COUNT = 3;
+	private static final int UNLOAD_BULLET_COUNT = 5;
 
 	public ForeverClient(String name) {
 		super(name);
@@ -109,7 +109,7 @@ public class ForeverClient extends TestClient {
 	@Override
 	public JSONObject prepareTurn(ServerResponse sr) {
 		usedResources = 0;
-		System.out.println(availableResources() + "R: ");
+//		System.out.println(availableResources() + "R: ");
 		JSONObject turnObj = new JSONObject();
 		token = sr.playerToken;
 		ships = sr.ships;
@@ -400,34 +400,34 @@ public class ForeverClient extends TestClient {
 					mainOutline.width + (2 * DELTA_NEAR_MAIN), mainOutline.height + (2 * DELTA_NEAR_MAIN));
 
 			for (HitReport hr : hits) {
-				System.out.println(hr);
+//				System.out.println(hr);
 				if (s.contains(new Point(hr.xCoord, hr.yCoord))) {
 					//JOptionPane.showConfirmDialog(null, "Collision at ("+s.xCoord+", "+s.yCoord+") on turn " + turn);
 					switch (s.type) {
 					case Main:
 						if (mainHit == null || mainHit.health > s.health) {
 							mainHit = s;
-							System.out.println("A main has been hit!");
+//							System.out.println("A main has been hit!");
 						}
 						break;
 
 					case Destroyer:
 						if (destHit == null || destHit.health > s.health) {
 							destHit = s;
-							System.out.println("A destroyer has been hit!");
+//							System.out.println("A destroyer has been hit!");
 						}
 						break;
 
 					case Pilot:
 						if (pilotHit == null || pilotHit.health > s.health) {
 							pilotHit = s;
-							System.out.println("A pilot has been hit!");
+//							System.out.println("A pilot has been hit!");
 						}
 						break;
 					}
 				} else if (s.type == Ship.ShipType.Main && mainProximity.contains(new Point(hr.xCoord, hr.yCoord))) {
 					mainInDanger = s;
-					System.out.println("A main is in danger!");
+//					System.out.println("A main is in danger!");
 				}
 			}
 			for (PingReport pr : pings) {
@@ -436,21 +436,21 @@ public class ForeverClient extends TestClient {
 					case Main:
 						if (mainPing == null || mainPing.health > s.health) {
 							mainPing = s;
-							System.out.println("A main has been pinged!");
+//							System.out.println("A main has been pinged!");
 						}
 						break;
 
 					case Destroyer:
 						if (destPing == null || destPing.health > s.health) {
 							destPing = s;
-							System.out.println("A destroyer has been pinged!");
+//							System.out.println("A destroyer has been pinged!");
 						}
 						break;
 
 					case Pilot:
 						if (pilotPing == null || pilotPing.health > s.health) {
 							pilotPing = s;
-							System.out.println("A pilot has been pinged!");
+//							System.out.println("A pilot has been pinged!");
 						}
 						break;
 					}
@@ -496,7 +496,7 @@ public class ForeverClient extends TestClient {
 		if (predictDanger != null && !added) {
 			allHits.add(predictDanger);
 		}
-		System.out.println("Finished checking hits");
+//		System.out.println("Finished checking hits");
 		return allHits;
 	}
 
@@ -537,7 +537,7 @@ public class ForeverClient extends TestClient {
 					spend(MOVE_COST_MAIN);
 					toMove = s;
 					breakOut = true;
-					System.out.println("We'll move the main.");
+//					System.out.println("We'll move the main.");
 				}
 				break;
 
@@ -546,7 +546,7 @@ public class ForeverClient extends TestClient {
 					spend(MOVE_COST_PILOT);
 					toMove = s;
 					breakOut = true;
-					System.out.println("We'll move the pilot.");
+//					System.out.println("We'll move the pilot.");
 				}
 				break;
 
@@ -555,7 +555,7 @@ public class ForeverClient extends TestClient {
 					spend(MOVE_COST_DESTROY);
 					toMove = s;
 					breakOut = true;
-					System.out.println("We'll move the destroyer.");
+//					System.out.println("We'll move the destroyer.");
 				}
 				break;
 			}
@@ -633,7 +633,7 @@ public class ForeverClient extends TestClient {
 							sa.actionY = hr.yCoord;
 							indexedPlannedShots.put(sa.shipID, sa);
 							fireActions.add(sa);
-							System.out.println("..Added one burst attack..:" + i);
+//							System.out.println("..Added one burst attack..:" + i);
 
 							// subtract cost
 							spend(FIRE_COST);
