@@ -1,7 +1,11 @@
 # emacs files
 *~
 
-bin
 
-# meld stuff
+# meld files
 *.orig
+
+# eclipse files
+.metadata
+
+bin
